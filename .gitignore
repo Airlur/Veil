@@ -1,0 +1,17 @@
+# 构建产物
+Veil.exe
+Veil.exe~
+dist/
+*.zip
+
+# 用户私有配置与素材（config.json 是本机配置，presets/ 内可能含版权素材，均不入库）
+config.json
+presets/*
+!presets/README.txt
+
+# 日志与临时文件
+*.log
+.playwright-cli/
+check.png
+Thumbs.db
+*-preview.png

@@ -1,0 +1,58 @@
+name: Build
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        run: >
+          go build -trimpath -ldflags "-H=windowsgui -s -w"
+          -o Veil.exe .
+        shell: pwsh
+
+      - name: Package (green portable zip)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/presets | Out-Null
+          Copy-Item Veil.exe dist/
+          Copy-Item README.md dist/
+          Copy-Item AGENTS.md dist/
+          @'
+          这个文件夹用于目录预设：把任意 JPG/PNG/WEBP 图片放进来，
+          重启 Veil 后会自动出现在设置面板的预设网格里。
+          注意：不要放来源不明的版权素材，分发时也请自行确认。
+          '@ | Out-File -Encoding utf8 dist/presets/README.txt
+          Compress-Archive -Path dist/* -DestinationPath Veil-windows.zip -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Veil-windows
+          path: Veil-windows.zip
+
+      - name: Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Veil-windows.zip
+          generate_release_notes: true
