@@ -91,10 +91,8 @@ var (
 	procSetSystemCursor     = user32.NewProc("SetSystemCursor")
 	procCreateCursor        = user32.NewProc("CreateCursor")
 	procDestroyCursor       = user32.NewProc("DestroyCursor")
-	procGetCursorInfo       = user32.NewProc("GetCursorInfo")
 	procGetIconInfo         = user32.NewProc("GetIconInfo")
 	procDrawIconEx          = user32.NewProc("DrawIconEx")
-	procUpdateLayeredWindow = user32.NewProc("UpdateLayeredWindow")
 	procGetObjectW          = gdi32.NewProc("GetObjectW")
 	procChangeWindowMessageFilterEx = user32.NewProc("ChangeWindowMessageFilterEx")
 )
@@ -270,22 +268,15 @@ const (
 	CMD_SETTINGS = 1003
 	CMD_EXIT     = 1004
 	CMD_OPENLOG  = 1005
-	CMD_REMOTECURSOR = 1006
 )
 
 const (
 	TIMER_KEEPTOP = 1
-	// TIMER_CURSOR 驱动替身光标跟随（2/3 已被 TIMER_PREVIEW / TIMER_PROBE 占用）
-	TIMER_CURSOR = 4
 )
 
 const (
 	SPI_SETCURSORS = 0x0057
-	CURSOR_SHOWING = 0x00000001
 	DI_NORMAL      = 0x0003
-	ULW_ALPHA      = 0x00000002
-	AC_SRC_OVER    = 0x00
-	AC_SRC_ALPHA   = 0x01
 	MSGFLT_ALLOW   = 1
 )
 
@@ -359,13 +350,6 @@ type NOTIFYICONDATAW struct {
 	HBalloonIcon     windows.Handle
 }
 
-type CURSORINFO struct {
-	CbSize      uint32
-	Flags       uint32
-	HCursor     windows.Handle
-	PtScreenPos POINT
-}
-
 type ICONINFO struct {
 	FIcon    int32
 	XHotspot uint32
@@ -382,17 +366,6 @@ type BITMAP struct {
 	BmPlanes     uint16
 	BmBitsPixel  uint16
 	BmBits       uintptr
-}
-
-type SIZE struct {
-	Cx, Cy int32
-}
-
-type BLENDFUNCTION struct {
-	BlendOp             byte
-	BlendFlags          byte
-	SourceConstantAlpha byte
-	AlphaFormat         byte
 }
 
 // PAINTSTRUCT 与 Win32 结构布局一致。

@@ -142,8 +142,6 @@ func showTrayMenu() {
 	procAppendMenuW.Call(hMenu, MF_SEPARATOR, 0, 0)
 	addItem(CMD_SETTINGS, "设置隐私屏保")
 	addItem(CMD_OPENLOG, "查看日志")
-	// 默认关闭。只有远控端看不到光标时才需要开；UU 自己会画光标，开了会有拖影
-	addRadio(CMD_REMOTECURSOR, "远控端替身光标", getConfig().RemoteCursor)
 	procAppendMenuW.Call(hMenu, MF_SEPARATOR, 0, 0)
 	addItem(CMD_EXIT, "退出")
 
@@ -186,8 +184,6 @@ func showTrayMenu() {
 	case CMD_OPENLOG:
 		openLogLocation()
 		return
-	case CMD_REMOTECURSOR:
-		setRemoteCursor(!getConfig().RemoteCursor)
 
 	case CMD_SETTINGS:
 		go openSettingsWindow() // 异步：创建会阻塞

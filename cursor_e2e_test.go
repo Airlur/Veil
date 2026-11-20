@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"runtime"
-	"syscall"
 	"testing"
 	"time"
 	"unsafe"
@@ -13,23 +11,51 @@ import (
 )
 
 // 这些测试会真的替换系统光标（约 1 秒），默认跳过：
-//   set VEIL_CURSOR_E2E=1 && go test -run CursorE2E -v .
+//   set VEIL_CURSOR_E2E=1 && go test -count=1 -run CursorE2E -v .
 
-func arrowOpaquePixels() int {
+// arrowState 返回系统箭头光标当前的宽度和可见像素数（其他程序读到的就是这个）。
+// 分别画在黑底和白底上：任何一处偏离底色的像素即为可见。
+func arrowState() (width int32, visible int) {
 	h, _, _ := procLoadCursorW.Call(0, 32512)
-	s := renderCursorShape(h)
-	if s == nil {
-		return -1
+	var ii ICONINFO
+	if r, _, _ := procGetIconInfo.Call(h, uintptr(unsafe.Pointer(&ii))); r == 0 {
+		return 0, -1
 	}
-	defer procDeleteDC.Call(s.dc)
-	defer procDeleteObject.Call(s.bmp)
-	n := 0
-	for i := 3; i < len(s.pix); i += 4 {
-		if s.pix[i] != 0 {
-			n++
+	var bm BITMAP
+	procGetObjectW.Call(uintptr(ii.HbmMask), unsafe.Sizeof(bm), uintptr(unsafe.Pointer(&bm)))
+	procDeleteObject.Call(uintptr(ii.HbmMask))
+	if ii.HbmColor != 0 {
+		procDeleteObject.Call(uintptr(ii.HbmColor))
+	}
+	w := bm.BmWidth
+
+	draw := func(fill byte) []byte {
+		var bi BITMAPINFO
+		bi.BmiHeader.BiSize = uint32(unsafe.Sizeof(BITMAPINFOHEADER{}))
+		bi.BmiHeader.BiWidth = w
+		bi.BmiHeader.BiHeight = -w
+		bi.BmiHeader.BiPlanes = 1
+		bi.BmiHeader.BiBitCount = 32
+		var bits unsafe.Pointer
+		bmp, _, _ := procCreateDIBSection.Call(0, uintptr(unsafe.Pointer(&bi)), DIB_RGB_COLORS, uintptr(unsafe.Pointer(&bits)), 0, 0)
+		dc, _, _ := procCreateCompatibleDC.Call(0)
+		defer procDeleteObject.Call(bmp)
+		defer procDeleteDC.Call(dc)
+		procSelectObject.Call(dc, bmp)
+		pix := unsafe.Slice((*byte)(bits), int(w)*int(w)*4)
+		for i := range pix {
+			pix[i] = fill
+		}
+		procDrawIconEx.Call(dc, 0, 0, h, uintptr(w), uintptr(w), 0, 0, DI_NORMAL)
+		return append([]byte(nil), pix...)
+	}
+	black, white := draw(0x00), draw(0xFF)
+	for i := 0; i < len(black); i += 4 {
+		if black[i+1] != 0x00 || white[i+1] != 0xFF {
+			visible++
 		}
 	}
-	return n
+	return w, visible
 }
 
 func TestCursorE2E(t *testing.T) {
@@ -37,91 +63,32 @@ func TestCursorE2E(t *testing.T) {
 		t.Skip("需要 VEIL_CURSOR_E2E=1")
 	}
 	defer restoreSystemCursors() // 无论如何都恢复
-	runtime.LockOSThread()
-	defer runtime.UnlockOSThread()
 	cfg = defaultConfig()
-	cfg.RemoteCursor = true
-	// 替身光标只在有遮罩时才显示：建一块真实遮罩（物理屏会被盖住约 1 秒）
-	overlayWndProcCallback = syscall.NewCallback(overlayWndProc)
-	if err := registerOverlayClass(); err != nil {
-		t.Fatal(err)
-	}
-	var prim Monitor
-	for _, m := range enumMonitors() {
-		if m.Primary {
-			prim = m
-		}
-	}
-	ow, err := createOneOverlay(prim)
-	if err != nil {
-		t.Fatal(err)
-	}
-	activeOverlays = []*overlayWindow{ow}
-	defer func() {
-		procDestroyWindow.Call(uintptr(ow.hwnd))
-		ow.releaseBitmap()
-		activeOverlays = nil
-	}()
 	watchdogStarted = true // 测试进程不拉看门狗
-	before := arrowOpaquePixels()
+	w0, before := arrowState()
 	if before <= 0 {
 		t.Fatalf("测试前箭头光标不可见(%d)，系统光标状态异常", before)
 	}
 
 	hideCursors()
-	if n := arrowOpaquePixels(); n != 0 {
+	w1, n := arrowState()
+	t.Logf("箭头光标：隐藏前 %dpx / %d 可见像素，隐藏后 %dpx / %d 可见像素", w0, before, w1, n)
+	if n != 0 {
 		t.Errorf("隐藏后箭头光标仍有 %d 个可见像素", n)
 	}
-	if cursorHwnd == 0 {
-		t.Fatal("替身光标窗口未创建")
-	}
-	var ci CURSORINFO
-	ci.CbSize = uint32(unsafe.Sizeof(ci))
-	procGetCursorInfo.Call(uintptr(unsafe.Pointer(&ci)))
-	shape := cursorShapes[uintptr(ci.HCursor)]
-	t.Logf("当前光标句柄 %#x showing=%v 命中形状表=%v 表大小=%d", ci.HCursor, ci.Flags&CURSOR_SHOWING != 0, shape != nil, len(cursorShapes))
-	syncCursorWindow()
-	vis, _, _ := user32.NewProc("IsWindowVisible").Call(uintptr(cursorHwnd))
-	var rc RECT
-	procGetWindowRect.Call(uintptr(cursorHwnd), uintptr(unsafe.Pointer(&rc)))
-	var aff uint32
-	user32.NewProc("GetWindowDisplayAffinity").Call(uintptr(cursorHwnd), uintptr(unsafe.Pointer(&aff)))
-	t.Logf("替身窗口 visible=%v rect=%+v 光标位置=%+v band=%d affinity=%#x", vis != 0, rc, ci.PtScreenPos, windowBand(cursorHwnd), aff)
-	if shape != nil && ci.Flags&CURSOR_SHOWING != 0 {
-		if vis == 0 {
-			t.Error("光标可见且是系统光标，但替身窗口未显示")
-		}
-		if rc.Left+shape.hotX != ci.PtScreenPos.X || rc.Top+shape.hotY != ci.PtScreenPos.Y {
-			t.Error("替身窗口位置与光标热点不一致")
-		}
-	}
-	if aff != 0 {
-		t.Error("替身窗口不应设置捕获排除")
-	}
-	// Z 序：反复抢顶 + 同步，替身必须始终紧贴在遮罩正下方，一次都不能跑到遮罩上面
-	getWindow := user32.NewProc("GetWindow")
-	for i := 0; i < 40; i++ {
-		keepOnTop()
-		syncCursorWindow()
-		above, _, _ := getWindow.Call(uintptr(cursorHwnd), 3) // GW_HWNDPREV
-		if windows.Handle(above) != ow.hwnd {
-			t.Fatalf("第 %d 轮：替身光标上方的窗口是 %#x，不是遮罩 %#x", i, above, ow.hwnd)
-		}
-		time.Sleep(10 * time.Millisecond)
+	// 透明光标必须远小于真实光标，UU 才会改从光标文件加载（见 cursor.go 文件头）
+	if w1*4 > w0 {
+		t.Errorf("透明光标尺寸 %d 不够小（真实光标 %d）", w1, w0)
 	}
 
 	showCursors()
-	// 只要求恢复可见：系统重载光标后尺寸可能随 DPI 与测试前不同
-	if after := arrowOpaquePixels(); after <= 0 {
-		t.Errorf("恢复后箭头光标不可见(%d)", after)
-	}
-	if cursorHwnd != 0 || len(cursorShapes) != 0 {
-		t.Error("showCursors 未清理干净")
+	if w2, after := arrowState(); after <= 0 || w2 != w0 {
+		t.Errorf("恢复后箭头光标异常：%dpx / %d 可见像素", w2, after)
 	}
 }
 
-// 模拟崩溃：隐藏光标后直接退出进程，由看门狗恢复。
-// 需要 VEIL_WATCHDOG_EXE 指向已构建的 Veil.exe。
+// 模拟崩溃：隐藏光标后强杀自己，由看门狗恢复。该用例以进程被杀（FAIL）结束属预期，
+// 随后跑 TestCursorE2EAfterCrash 判定。VEIL_WATCHDOG_EXE 需指向非 UIAccess 的 Veil.exe。
 func TestCursorE2ECrash(t *testing.T) {
 	exe := os.Getenv("VEIL_WATCHDOG_EXE")
 	if os.Getenv("VEIL_CURSOR_E2E") == "" || exe == "" {
@@ -135,12 +102,11 @@ func TestCursorE2ECrash(t *testing.T) {
 	}
 	time.Sleep(500 * time.Millisecond) // 等看门狗拿到本进程句柄
 	hideCursors()
-	if n := arrowOpaquePixels(); n != 0 {
+	if _, n := arrowState(); n != 0 {
 		restoreSystemCursors()
 		t.Fatalf("隐藏失败 %d", n)
 	}
 	fmt.Println("HIDDEN_OK: cursor hidden, killing self")
-	// 不恢复，直接强杀自己（等同任务管理器结束进程）
 	windows.TerminateProcess(windows.CurrentProcess(), 1)
 }
 
@@ -148,7 +114,7 @@ func TestCursorE2EAfterCrash(t *testing.T) {
 	if os.Getenv("VEIL_CURSOR_E2E") == "" {
 		t.Skip("需要 VEIL_CURSOR_E2E=1")
 	}
-	if n := arrowOpaquePixels(); n <= 0 {
+	if _, n := arrowState(); n <= 0 {
 		restoreSystemCursors()
 		t.Fatalf("看门狗没有恢复光标（箭头可见像素=%d），已手动恢复", n)
 	}

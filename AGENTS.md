@@ -126,12 +126,20 @@ go test ./...       # 回归测试（图标构建、热键解析）
 - **数据目录**：`dataDir()`——exe 同目录可写就用它（便携版），否则 `%APPDATA%\Veil`（安装版）。config.json 和 `presets\` 都跟它走，新代码不要再直接用 `exeDir()` 存数据。
 - **`tools/bandscan`**：按实际 Z 序列出窗口及其 band，排查"谁盖在遮罩上面"。
 
-**光标（`cursor.go`）**：遮罩开启时 `SetSystemCursor` 把系统标准光标换成透明（两个版本都生效）。可选的"替身光标"默认关闭：一个不设捕获排除、插在遮罩正下方的小窗口（物理屏不可见、远控端可见），给看不到被控端光标的远控软件用。UU 自己会画光标，开了替身会有拖影（已实测），所以默认关。
+**光标（`cursor.go`）**：遮罩开启时 `SetSystemCursor` 把系统标准光标全部换成 **1x1** 全透明光标，关闭时 `SPI_SETCURSORS` 恢复。两个版本都生效。
 
-- 恢复三重保险：关闭遮罩时 `SPI_SETCURSORS`；看门狗进程 `Veil.exe -cursor-watchdog <pid>`；每次启动无条件恢复。
-- config.json 开关：`"hideCursor"`（缺省 true）控制整个功能；`"remoteCursor"`（缺省 false）控制替身光标。
+- 恢复三重保险：关闭遮罩时恢复；看门狗进程 `Veil.exe -cursor-watchdog <pid>`；每次启动无条件恢复。
+- config.json：`"hideCursor": false` 关闭该功能（缺省 true）。没有 UI 开关。
 - 边界：应用自绘光标不受 `SetSystemCursor` 影响，仍会显示在物理屏。
-- 实测用例默认跳过（会真的换系统光标）：`set VEIL_CURSOR_E2E=1 && go test -count=1 -run CursorE2E -v .`；崩溃恢复用例另需 `VEIL_WATCHDOG_EXE` 指向一个非 UIAccess 的 Veil.exe，且其结果为进程被杀（FAIL 属预期），随后跑 `TestCursorE2EAfterCrash` 判定。
-- **替身光标 Z 序（已踩坑）**：只能用 `SetWindowPos(cursorHwnd, 遮罩hwnd, …)` 插到遮罩正下方（`placeCursorWindow`）。早期"先提替身到 TOPMOST、再提遮罩"的写法，每个抢顶周期替身都会在遮罩上面露一帧，物理屏表现为光标不停闪烁。
+- 实测用例默认跳过（会真的换系统光标）：`set VEIL_CURSOR_E2E=1 && go test -count=1 -run CursorE2E -v .`；崩溃恢复用例另需 `VEIL_WATCHDOG_EXE` 指向一个非 UIAccess 的 Veil.exe，它以进程被杀（FAIL）结束属预期，随后跑 `TestCursorE2EAfterCrash` 判定。
+
+**光标与 UU 远程（走过的弯路，别再重试）**：
+
+- UU 被控端读取的是系统真实光标，并且会判断光标是否"真的可见"。光标变透明或被隐藏后，UU 会进入它自己的兜底逻辑，表现不稳定：远控端光标消失、过一阵又恢复、移动手感变化。
+- **32x32 透明光标**（最初的做法）：系统会按 DPI 把它放大到与真实光标同尺寸，UU 读到透明形状，远控端光标时有时无。
+- **替身光标**（不设捕获排除、插在遮罩正下方的小窗口）：远控端看到的是视频画面里的光标，有延迟；UU 兜底显示本地光标时还会叠成两个，表现为拖影。已删除，代码在提交 803acac。
+- **Magnification API**（`MagShowSystemCursor(FALSE)`，UU 自己的隐私屏也用它）：光标形状不变，但 UU 仍判定为"隐藏"，远控端没有光标。UU 自己能用是因为它内部知道隐私屏开着。已删除。
+- **现在的做法为什么可能有效**：UU 的程序里有一条"高分辨率光标"路径——按注册表 `Control Panel\Cursors` 直接加载光标文件，不读系统当前光标；用户实测"透明光标下远控端光标会自己恢复正常"与此吻合。推测触发条件是光标原始尺寸小于控制端需要的尺寸，所以把透明光标做到 1x1。**这是根据 UU 程序内的文字和现象做的推断，UU 的日志是加密的，无法直接证实。**
+- 排查手段：`GetIconInfo` 看其他进程读到的光标尺寸（随调用线程的 DPI 感知缩放）；Mag 隐藏不改变 `GetCursorInfo` 的结果，也不产生 OBJID_CURSOR 的 WinEvent。
+
 - **图标资源 ID**：rsrc 按顺序编号，UIAccess 版 manifest 占 ID 1、图标是 ID 2；`initTrayIcon` 依次尝试 1–3。
-- 托盘菜单「远控端替身光标」对应 `remoteCursor`，切换立即生效。

@@ -28,21 +28,15 @@ type Config struct {
 	HotkeyQuit string `json:"hotkeyQuit"`
 	// HotkeySettings 打开设置面板的热键
 	HotkeySettings string `json:"hotkeySettings"`
-	// HideCursor 遮罩期间隐藏物理屏鼠标光标。指针类型：老配置没有这个字段时按 true 处理
+	// HideCursor 遮罩期间隐藏物理屏鼠标光标。指针类型：配置里没有这个字段时按 true 处理
 	HideCursorOpt *bool `json:"hideCursor,omitempty"`
-	// RemoteCursor 隐藏光标时给远控端补一个替身光标。默认关闭：
-	// UU 远程自己会画光标，叠上替身会出现拖影（已实测）。远控端看不到光标的软件才需要开。
-	// 远控端出现两个光标（说明远控软件自己会画光标）时设为 false
-	RemoteCursorOpt *bool `json:"remoteCursor,omitempty"`
-	// 解析后的生效值（不持久化）
-	HideCursor   bool `json:"-"`
-	RemoteCursor bool `json:"-"`
+	HideCursor    bool  `json:"-"` // 解析后的生效值
 }
 
 // 默认热键。兜底键 fallbackHotkey 永远固定，不参与自定义。
 const (
-	defaultHotkeyToggle = "Ctrl+Alt+X"
-	defaultHotkeyQuit   = "Ctrl+Alt+C"
+	defaultHotkeyToggle   = "Ctrl+Alt+X"
+	defaultHotkeyQuit     = "Ctrl+Alt+C"
 	defaultHotkeySettings = "Ctrl+Alt+S"
 	// fallbackHotkey 强制逃生键：无论用户把热键改成什么，这个组合永远能退出程序。
 	fallbackHotkey = "Ctrl+Alt+Shift+Q"
@@ -56,14 +50,13 @@ var (
 
 func defaultConfig() Config {
 	return Config{
-		PresetID:     "black",
-		CustomImage:  "",
-		AllMonitors:  true,
-		HotkeyToggle: defaultHotkeyToggle,
-		HotkeyQuit:       defaultHotkeyQuit,
+		PresetID:       "black",
+		CustomImage:    "",
+		AllMonitors:    true,
+		HotkeyToggle:   defaultHotkeyToggle,
+		HotkeyQuit:     defaultHotkeyQuit,
 		HotkeySettings: defaultHotkeySettings,
 		HideCursor:     true,
-		RemoteCursor:   false,
 	}
 }
 
@@ -143,7 +136,6 @@ func loadConfig() {
 		c.AppliedCustomImage = c.CustomImage
 	}
 	c.HideCursor = c.HideCursorOpt == nil || *c.HideCursorOpt
-	c.RemoteCursor = c.RemoteCursorOpt != nil && *c.RemoteCursorOpt
 	cfgMu.Lock()
 	cfg = c
 	cfgMu.Unlock()

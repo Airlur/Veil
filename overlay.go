@@ -343,7 +343,6 @@ func rebuildOverlay() {
 
 // keepOnTop 由定时器驱动，抵抗其他置顶窗口抢占与 DWM 状态重置。
 func keepOnTop() {
-	defer placeCursorWindow(0) // 遮罩排好后，把替身光标重新插到遮罩正下方
 	for _, ow := range activeOverlays {
 		procSetWindowPos.Call(
 			uintptr(ow.hwnd), HWND_TOPMOST,
@@ -571,8 +570,6 @@ func controlWndProc(hwnd windows.Handle, msg uint32, wParam, lParam uintptr) uin
 	case WM_TIMER:
 		if wParam == TIMER_KEEPTOP {
 			keepOnTop()
-		} else if wParam == TIMER_CURSOR {
-			syncCursorWindow()
 		} else if wParam == TIMER_PREVIEW {
 			procKillTimer.Call(uintptr(controlHwnd), TIMER_PREVIEW)
 			renderOverride.Store(nil) // 清掉预览临时配置
