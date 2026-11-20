@@ -151,7 +151,7 @@
     display:flex;align-items:center;gap:12px;
     padding:9px 0;
   }
-  .hk-row + .hk-row{border-top:1px dashed var(--line);}
+  .hk-item + .hk-item{border-top:1px dashed var(--line);}
   .hk-label{width:74px;font-size:13px;flex-shrink:0;}
   .hk-key{
     min-width:170px;height:32px;
@@ -162,6 +162,27 @@
   }
   .hk-key:hover{border-color:var(--accent);}
   .hk-key.recording{border-color:var(--accent);background:#f3f7ff;color:var(--accent);}
+  /* 未生效（被占用）的热键：必须一眼看得出来 */
+  .hk-key.inactive{border-color:#e5484d;background:#fff6f6;color:#c62828;}
+  /* 用户主动禁用的热键：灰色，不是错误 */
+  .hk-key.off{color:var(--muted);background:var(--soft);border-style:dashed;}
+  .hk-off{
+    margin-left:auto;flex-shrink:0;
+    background:none;border:none;padding:4px 2px;
+    font-family:inherit;font-size:12px;color:var(--sub);cursor:pointer;
+  }
+  .hk-off:hover{color:var(--accent);}
+  .hk-off[hidden]{display:none;}
+  .hk-msg{margin:-2px 0 9px 86px;font-size:12px;line-height:1.9;color:#c62828;}
+  .hk-msg[hidden]{display:none;}
+  .hk-msg .hk-sub{color:var(--sub);}
+  .hk-chip{
+    margin-left:6px;padding:0 9px;height:22px;
+    background:#fff;border:1px solid #c9d6ff;border-radius:11px;
+    font-family:inherit;font-size:12px;color:var(--accent);cursor:pointer;
+  }
+  .hk-chip:hover{background:#f3f7ff;border-color:var(--accent);}
+  .hk-warn{color:#c62828;}
   .hk-desc{color:var(--muted);font-size:12px;}
   .hk-note{
     margin-top:10px;padding-bottom:8px;
@@ -227,24 +248,38 @@
 
   <div class="sec mt">快捷键</div>
   <div class="hk-card">
-    <div class="hk-row">
-      <span class="hk-label">开关防窥</span>
-      <button class="hk-key" id="hkToggle" onclick="recordHotkey('toggle')">Ctrl+Alt+V</button>
-      <span class="hk-desc">开启 / 关闭隐私屏保</span>
+    <div class="hk-item">
+      <div class="hk-row">
+        <span class="hk-label">开关防窥</span>
+        <button class="hk-key" id="hkToggle" onclick="recordHotkey('toggle')">Ctrl+Alt+X</button>
+        <span class="hk-desc">开启 / 关闭隐私屏保</span>
+        <button class="hk-off" id="hkOffToggle" onclick="setHotkeyOff('toggle', true)">禁用</button>
+      </div>
+      <div class="hk-msg" id="hkMsgToggle" hidden></div>
     </div>
-    <div class="hk-row">
-      <span class="hk-label">打开设置</span>
-      <button class="hk-key" id="hkSettings" onclick="recordHotkey('settings')">Ctrl+Alt+S</button>
-      <span class="hk-desc">打开 / 关闭本面板</span>
+    <div class="hk-item">
+      <div class="hk-row">
+        <span class="hk-label">打开设置</span>
+        <button class="hk-key" id="hkSettings" onclick="recordHotkey('settings')">Ctrl+Alt+S</button>
+        <span class="hk-desc">打开 / 关闭本面板</span>
+        <button class="hk-off" id="hkOffSettings" onclick="setHotkeyOff('settings', true)">禁用</button>
+      </div>
+      <div class="hk-msg" id="hkMsgSettings" hidden></div>
     </div>
-    <div class="hk-row">
-      <span class="hk-label">退出程序</span>
-      <button class="hk-key" id="hkQuit" onclick="recordHotkey('quit')">Ctrl+Alt+Shift+Q</button>
-      <span class="hk-desc">彻底退出 Veil</span>
+    <div class="hk-item">
+      <div class="hk-row">
+        <span class="hk-label">退出程序</span>
+        <button class="hk-key" id="hkQuit" onclick="recordHotkey('quit')">Ctrl+Alt+C</button>
+        <span class="hk-desc">彻底退出 Veil</span>
+        <button class="hk-off" id="hkOffQuit" onclick="setHotkeyOff('quit', true)">禁用</button>
+      </div>
+      <div class="hk-msg" id="hkMsgQuit" hidden></div>
     </div>
     <div class="hk-note">
-      点击热键框后按下新的组合键即可（须含 Ctrl 或 Alt，支持字母 / 数字 / F1~F12），按 Esc 取消。
-      固定兜底键 <b>Ctrl+Alt+Shift+Q</b> 始终可以强制退出，防止热键改坏后屏幕被遮住无法自救。
+      点击热键框后按下新的组合键，按 Esc 取消。字母、数字等按键需搭配 Ctrl、Alt 或 Win；F1~F12 可搭配任意修饰键（含 Shift）。
+      按下后面板没有反应，通常说明该组合已被其他程序占用。不需要的快捷键可以单独禁用，也可以在托盘菜单里一键全部禁用。<br>
+      固定兜底键 <b>Ctrl+Alt+Shift+Q</b> 始终可以强制退出（不可禁用），防止屏幕被遮住后无法自救。
+      <span class="hk-warn" id="hkEscapeWarn" hidden>（当前被其他程序占用，未生效）</span>
     </div>
   </div>
 
@@ -274,7 +309,7 @@ async function boot(){
   try{ S = JSON.parse(await window.goState()); }
   catch(e){ S = {presets:[],presetId:'black',customImage:'',allMonitors:true}; }
   render();
-  loadHotkeys();
+  loadHotkeys(true);
 }
 
 const THUMBS = {}; // id -> dataURI，预加载后切换预设不再触发重新加载
@@ -379,65 +414,138 @@ async function preview(){
 
 /* ---------- 快捷键 ---------- */
 
-async function loadHotkeys(){
-  try{
-    const hk = JSON.parse(await window.goGetHotkeys());
-    document.getElementById('hkToggle').textContent = hk.toggle;
-    document.getElementById('hkSettings').textContent = hk.settings;
-    document.getElementById('hkQuit').textContent = hk.quit;
-  }catch(e){}
+const HK = {
+  toggle:   {btn:'hkToggle',   msg:'hkMsgToggle',   off:'hkOffToggle'},
+  settings: {btn:'hkSettings', msg:'hkMsgSettings', off:'hkOffSettings'},
+  quit:     {btn:'hkQuit',     msg:'hkMsgQuit',     off:'hkOffQuit'},
+};
+// 每行下方的提示：修改失败的原因 / "未生效"状态，附带可点击的空闲组合。
+// 提示一直留在对应那一行（不用几秒就消失的 toast），直到改成功或重新录制。
+const hkNotes = {};
+
+function setHotkeyNote(kind, text, suggest, auto){
+  if(text) hkNotes[kind] = {text, suggest: suggest||[], auto: !!auto};
+  else delete hkNotes[kind];
+  const box = document.getElementById(HK[kind].msg);
+  const n = hkNotes[kind];
+  box.innerHTML = '';
+  box.hidden = !n;
+  if(!n) return;
+  const t = document.createElement('span');
+  t.textContent = n.text;
+  box.appendChild(t);
+  if(n.suggest.length){
+    const sub = document.createElement('span');
+    sub.className = 'hk-sub';
+    sub.textContent = '这些组合当前空闲，点击即可使用：';
+    box.appendChild(sub);
+    n.suggest.forEach(s=>{
+      const b = document.createElement('button');
+      b.className = 'hk-chip';
+      b.textContent = s.combo;
+      b.onclick = ()=>submitHotkey(kind, s.mods, s.vk);
+      box.appendChild(b);
+    });
+  }
+}
+
+// reset=true：面板重新打开时清掉上次留下的提示
+async function loadHotkeys(reset){
+  let hk;
+  try{ hk = JSON.parse(await window.goGetHotkeys()); }catch(e){ return; }
+  let free = null;
+  for(const kind in HK){
+    const st = hk[kind];
+    if(!st) continue;
+    if(reset) setHotkeyNote(kind, '');
+    const btn = document.getElementById(HK[kind].btn);
+    const busy = recording === kind;
+    if(!busy) btn.textContent = st.disabled ? st.combo + '（已禁用）' : st.combo;
+    btn.classList.toggle('off', st.disabled && !busy);
+    btn.classList.toggle('inactive', !st.active && !st.disabled && !busy);
+    const off = document.getElementById(HK[kind].off);
+    off.textContent = st.disabled ? '启用' : '禁用';
+    off.onclick = ()=>setHotkeyOff(kind, !st.disabled);
+    if(st.active || st.disabled){
+      if(hkNotes[kind] && hkNotes[kind].auto) setHotkeyNote(kind, '');
+    }else if(!hkNotes[kind]){
+      if(free === null){
+        try{ free = JSON.parse(await window.goSuggestHotkeys()); }catch(e){ free = []; }
+      }
+      setHotkeyNote(kind, '未生效：' + st.combo + ' 已被其他程序占用。', free, true);
+    }
+  }
+  document.getElementById('hkEscapeWarn').hidden = !hk.escape || hk.escape.active;
 }
 
 let recording = null;
 
+// 返回 Windows 虚拟键码（WebView2 里 keyCode 就是 VK）。
+function vkFromEvent(e){
+  let vk = e.keyCode || 0;
+  // 输入法开启时字母 / 数字键会报 229，改用物理键位推算
+  if(vk === 229 || vk === 0){
+    const c = e.code || '';
+    if(/^Key[A-Z]$/.test(c)) vk = c.charCodeAt(3);
+    else if(/^Digit[0-9]$/.test(c)) vk = c.charCodeAt(5);
+    else vk = 0;
+  }
+  return vk;
+}
+
 function recordHotkey(kind){
   if(recording) return;
   recording = kind;
-  const btn = document.getElementById(kind==='toggle'?'hkToggle':(kind==='settings'?'hkSettings':'hkQuit'));
+  setHotkeyNote(kind, '');
+  const btn = document.getElementById(HK[kind].btn);
   btn.textContent = '按下新的组合键…（Esc 取消）';
+  btn.classList.remove('inactive', 'off');
   btn.classList.add('recording');
 
   const handler = (e)=>{
     e.preventDefault(); e.stopPropagation();
-    if(e.key === 'Escape'){ end(); return; }
-    const code = e.code;
-    let main = null;
-    if(/^Key[A-Z]$/.test(code)) main = code.slice(3);
-    else if(/^Digit[0-9]$/.test(code)) main = code.slice(5);
-    else if(/^F([1-9]|1[0-2])$/.test(code)) main = code;
-    if(!main) return; // 忽略单独的修饰键
-    if(!(e.ctrlKey || e.altKey)){
-      tip('组合必须包含 Ctrl 或 Alt', 3000);
-      return;
-    }
-    const parts = [];
-    if(e.ctrlKey) parts.push('Ctrl');
-    if(e.altKey)  parts.push('Alt');
-    if(e.shiftKey) parts.push('Shift');
-    if(e.metaKey) parts.push('Win');
-    parts.push(main);
-    const combo = parts.join('+');
+    if(e.key === 'Escape'){ end(); loadHotkeys(); return; }
+    const vk = vkFromEvent(e);
+    // 单独按下的修饰键（Shift / Ctrl / Alt / Win）：继续等主键
+    if(!vk || vk===16 || vk===17 || vk===18 || vk===91 || vk===92) return;
+    // 修饰键位与 Windows 的 MOD_* 一致；合法性由后端统一判断
+    const mods = (e.altKey?1:0) | (e.ctrlKey?2:0) | (e.shiftKey?4:0) | (e.metaKey?8:0);
     end();
-    submitHotkey(kind, combo);
+    submitHotkey(kind, mods, vk);
   };
   const end = ()=>{
     window.removeEventListener('keydown', handler, true);
     recording = null;
     btn.classList.remove('recording');
-    loadHotkeys();
   };
   window.addEventListener('keydown', handler, true);
 }
 
-async function submitHotkey(kind, combo){
-  const raw = await window.goSetHotkey(kind, combo);
-  let r; try{ r = JSON.parse(raw); }catch(e){ r = {error:'返回格式异常'}; }
+async function submitHotkey(kind, mods, vk){
+  let r;
+  try{ r = JSON.parse(await window.goSetHotkey(kind, mods, vk)); }
+  catch(e){ r = {error:'返回格式异常'}; }
   if(r.error){
-    tip(r.error, 4000);
+    setHotkeyNote(kind, r.error + '。', r.suggest);
   }else{
-    tip('快捷键已更新为 ' + combo);
-    loadHotkeys(); // 保存完成后刷新，显示才会跟上
+    setHotkeyNote(kind, '');
+    tip('快捷键已更新为 ' + r.ok);
   }
+  loadHotkeys();
+}
+
+async function setHotkeyOff(kind, off){
+  if(recording) return;
+  let r;
+  try{ r = JSON.parse(await window.goSetHotkeyOff(kind, off)); }
+  catch(e){ r = {error:'返回格式异常'}; }
+  if(r.error){
+    setHotkeyNote(kind, r.error + '。', r.suggest);
+  }else{
+    setHotkeyNote(kind, '');
+    tip(off ? '已禁用该快捷键' : '快捷键已启用：' + r.ok);
+  }
+  loadHotkeys();
 }
 
 window.addEventListener('DOMContentLoaded', boot);

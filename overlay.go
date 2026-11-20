@@ -14,6 +14,7 @@ import (
 	"image"
 	"image/color"
 	"syscall"
+	"time"
 	"unsafe"
 
 	"golang.org/x/sys/windows"
@@ -448,7 +449,7 @@ const (
 	cmdQuit      = WM_APP + 14
 	cmdRefreshUI = WM_APP + 15
 	cmdPreview   = WM_APP + 16
-	cmdSetHotkey  = WM_APP + 17
+	cmdRunOnUI    = WM_APP + 17
 	cmdOpenSettings = WM_APP + 18
 	cmdApply      = WM_APP + 19
 )
@@ -459,6 +460,34 @@ const (
 	// TIMER_PROBE 用于命令行自检
 	TIMER_PROBE = 3
 )
+
+// uiJobs 是其他线程请求"在 UI 线程执行"的任务队列。
+var uiJobs = make(chan func(), 16)
+
+// runOnUI 在 UI 线程执行 fn 并等待其返回值；第二个返回值为 false 表示没能执行。
+// 用于只能在窗口所属线程调用的 API（RegisterHotKey 等）：设置面板的绑定函数跑在
+// WebView 线程，直接调用会失败。
+func runOnUI(fn func() string) (string, bool) {
+	if inUIThread() {
+		return fn(), true
+	}
+	if controlHwnd == 0 {
+		return "", false
+	}
+	done := make(chan string, 1)
+	select {
+	case uiJobs <- func() { done <- fn() }:
+	default:
+		return "", false // 队列已满
+	}
+	postCmd(cmdRunOnUI)
+	select {
+	case r := <-done:
+		return r, true
+	case <-time.After(3 * time.Second):
+		return "", false
+	}
+}
 
 func postCmd(cmd uint32) {
 	if controlHwnd == 0 {
@@ -492,15 +521,12 @@ func controlWndProc(hwnd windows.Handle, msg uint32, wParam, lParam uintptr) uin
 		}
 		return 0
 
-	case cmdSetHotkey:
-		// 前端请求修改热键：处理完把结果写回请求对象
-		hkMu.Lock()
-		req := pendingHK
-		pendingHK = nil
-		hkMu.Unlock()
-		if req != nil {
-			req.result <- applySetHotkey(req.kind, req.combo)
-			close(req.result)
+	case cmdRunOnUI:
+		// 其他线程经 runOnUI 排队的任务：每条消息执行一个
+		select {
+		case job := <-uiJobs:
+			job()
+		default:
 		}
 		return 0
 

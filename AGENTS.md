@@ -56,9 +56,14 @@ WDA 与 LAYERED 的兼容性已实测：只声明样式 + 普通 GDI 绘制时�
 ## 热键系统
 
 - 三组可自定义（开关/设置/退出）+ 一组固定兜底（`Ctrl+Alt+Shift+Q`，永不注销）。
-- 注册必须在 UI 线程（`WM_HOTKEY` 投递到注册线程）。前端修改走 `postCmd(cmdSetHotkey)` + channel 回传结果。
+- 注册 / 注销必须在 UI 线程。**已踩坑（v1.0.0 起一直存在）**：`goSetHotkey` 绑定跑在 WebView 线程，直接调 `RegisterHotKey` 会以 1408 失败，而旧代码把所有失败都报成"已被其他程序占用"——结果任何组合都改不了。现在面板的绑定函数（`setHotkeyFromPanel` / `setHotkeyOffFromPanel` / `suggestHotkeysFromPanel`）一律经 `runOnUI` 转到 UI 线程；新增需要 UI 线程的绑定沿用它。
+- 失败原因按错误码区分：只有 1409 才说"被其他程序占用"，并附带 `suggestFreeHotkeys` 实测出的空闲组合。系统没有"热键被谁占用"的查询接口。
+- 前端只传修饰键位 + `keyCode`（即 VK），按键表与合法性规则只在 `hotkey.go` 一处（`validateHotkey`）。
+- 每组有独立的禁用开关（config 的 `hotkey*Off`），组合键保留；托盘「禁用快捷键」= 三组全禁用 / 全恢复，与面板共用同一份状态（`notifyHotkeysChanged` 同步）。兜底键不可禁用。
+- 启动时注册失败的热键保持"未生效"并在面板标红，不再悄悄退回默认组合。
 - 退出热键允许设成与兜底相同（兜底承担，跳过注册）；开关热键不允许。
-- 失败自动回滚旧热键，绝不出现"热键没了程序失联"。
+- 修改失败自动回滚旧热键，绝不出现"热键没了程序失联"。
+- 测试：`TestHotkeyFromPanelThread` 用真实的 UI 线程 + 另一线程扮演 WebView，会短暂注册 Ctrl+Alt+Shift+F17~F24；本机有 Veil 在运行时最后一项（退出键=兜底组合）会跳过。
 
 ## 构建与测试
 

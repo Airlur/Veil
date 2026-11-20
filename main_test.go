@@ -33,28 +33,6 @@ func TestPreviewStarfield(t *testing.T) {
 	}
 }
 
-func TestParseHotkey(t *testing.T) {
-	cases := []struct {
-		in    string
-		ok    bool
-	}{
-		{"Ctrl+Alt+V", true},
-		{"Ctrl+Alt+Shift+Q", true},
-		{"Alt+F5", true},
-		{"Ctrl+Alt+X", true},
-		{"V", false},                // 缺修饰键
-		{"Ctrl", false},             // 缺主键
-		{"Ctrl+Alt+Shift", false},   // 缺主键
-		{"Ctrl+Alt+F13", false},     // 超范围
-	}
-	for _, c := range cases {
-		_, _, err := parseHotkey(c.in)
-		if (err == nil) != c.ok {
-			t.Errorf("parseHotkey(%q) err=%v, 期望 ok=%v", c.in, err, c.ok)
-		}
-	}
-}
-
 // 验证 goState 的回传体积——超过 WebView2 binding 可靠范围会导致前端拿到空预设
 func TestStatePayloadSize(t *testing.T) {
 	b, err := json.Marshal(buildState())

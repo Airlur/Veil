@@ -118,11 +118,18 @@ func updateTrayTip() {
 		return
 	}
 	nid := trayData()
+	combo, active, disabled := toggleHotkeyState()
+	state, action := "未开启", "开启"
 	if overlayOn {
-		copy(nid.SzTip[:], syscall.StringToUTF16(fmt.Sprintf("Veil 隐幕 — 防窥已开启 (%s 关闭)", activeHotkeyDesc))[0:])
-	} else {
-		copy(nid.SzTip[:], syscall.StringToUTF16(fmt.Sprintf("Veil 隐幕 — 未开启 (%s 开启)", activeHotkeyDesc))[0:])
+		state, action = "防窥已开启", "关闭"
 	}
+	tip := fmt.Sprintf("Veil 隐幕 — %s (%s %s)", state, combo, action)
+	if disabled {
+		tip = fmt.Sprintf("Veil 隐幕 — %s", state)
+	} else if !active {
+		tip = fmt.Sprintf("Veil 隐幕 — %s（开关热键未生效）", state)
+	}
+	copy(nid.SzTip[:], syscall.StringToUTF16(tip)[0:])
 	procShellNotifyIconW.Call(NIM_MODIFY, uintptr(unsafe.Pointer(&nid)))
 }
 
@@ -152,6 +159,8 @@ func showTrayMenu() {
 	procAppendMenuW.Call(hMenu, MF_SEPARATOR, 0, 0)
 	addItem(CMD_SETTINGS, "设置隐私屏保")
 	addItem(CMD_OPENLOG, "查看日志")
+	// 一键禁用 / 恢复全部三组热键；与设置面板里每组的"禁用"是同一份状态
+	addRadio(CMD_HOTKEYSOFF, "禁用快捷键", allHotkeysOff())
 	procAppendMenuW.Call(hMenu, MF_SEPARATOR, 0, 0)
 	addItem(CMD_EXIT, "退出")
 
@@ -194,6 +203,8 @@ func showTrayMenu() {
 	case CMD_OPENLOG:
 		openLogLocation()
 		return
+	case CMD_HOTKEYSOFF:
+		applySetAllHotkeysOff(!allHotkeysOff())
 
 	case CMD_SETTINGS:
 		go openSettingsWindow() // 异步：创建会阻塞

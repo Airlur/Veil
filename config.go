@@ -28,6 +28,10 @@ type Config struct {
 	HotkeyQuit string `json:"hotkeyQuit"`
 	// HotkeySettings 打开设置面板的热键
 	HotkeySettings string `json:"hotkeySettings"`
+	// 三组热键各自的"已禁用"开关。组合键本身保留，重新启用时恢复原组合
+	HotkeyToggleOff   bool `json:"hotkeyToggleOff,omitempty"`
+	HotkeySettingsOff bool `json:"hotkeySettingsOff,omitempty"`
+	HotkeyQuitOff     bool `json:"hotkeyQuitOff,omitempty"`
 	// HideCursor 遮罩期间隐藏物理屏鼠标光标。指针类型：配置里没有这个字段时按 true 处理
 	HideCursorOpt *bool `json:"hideCursor,omitempty"`
 	HideCursor    bool  `json:"-"` // 解析后的生效值

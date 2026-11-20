@@ -268,6 +268,7 @@ const (
 	CMD_SETTINGS = 1003
 	CMD_EXIT     = 1004
 	CMD_OPENLOG  = 1005
+	CMD_HOTKEYSOFF = 1006
 )
 
 const (

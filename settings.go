@@ -282,20 +282,14 @@ func bindSettings(w webview2.WebView) {
 	})
 
 	_ = w.Bind("goGetHotkeys", func() string {
-		cfg := getConfig()
-		b, _ := json.Marshal(map[string]string{
-			"toggle":   cfg.HotkeyToggle,
-			"settings": cfg.HotkeySettings,
-			"quit":     cfg.HotkeyQuit,
-			"escape":   fallbackHotkey,
-		})
-		return string(b)
+		return hotkeyStatusJSON()
 	})
 
-	_ = w.Bind("goSetHotkey", func(kind, combo string) string {
-		// 已在 UI 线程，直接应用
-		return applySetHotkey(kind, combo)
-	})
+	// 热键只能在 UI 线程注册 / 注销，而绑定函数跑在 WebView 线程：
+	// 这几个函数内部经 runOnUI 转过去（见 hotkey.go）
+	_ = w.Bind("goSetHotkey", setHotkeyFromPanel)
+	_ = w.Bind("goSetHotkeyOff", setHotkeyOffFromPanel)
+	_ = w.Bind("goSuggestHotkeys", suggestHotkeysFromPanel)
 }
 
 // hideSettings 隐藏设置窗；面板若被临时置顶则恢复正常层级，并恢复遮罩抢顶。

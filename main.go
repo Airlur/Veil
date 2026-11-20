@@ -99,9 +99,6 @@ var (
 	probeMode bool
 )
 
-// activeHotkeyDesc 记录实际生效的开关热键，供托盘菜单与提示文案使用。
-// 定义在 hotkey.go（由 cacheHotkey 维护）。
-
 // uiThread 负责所有窗口的创建与消息循环。
 // 必须 LockOSThread：Win32 窗口与线程绑定，Go 调度器换线程会导致消息投递到错误的线程。
 func uiThread(ready chan struct{}) {
@@ -125,11 +122,20 @@ func uiThread(ready chan struct{}) {
 		logf("WARNING: 托盘图标添加失败: %v", err)
 	}
 	// 自绘提示条：托盘图标在 Win11 里默认折叠进 "^"，只有声音和气泡都不可靠
-	showToast("Veil 已启动", fmt.Sprintf("%s 开启防窥 · 右键托盘图标设置屏保", activeHotkeyDesc))
+	toggleCombo, toggleActive, toggleOff := toggleHotkeyState()
+	switch {
+	case toggleActive:
+		showToast("Veil 已启动", fmt.Sprintf("%s 开启防窥 · 右键托盘图标设置屏保", toggleCombo))
+	case toggleOff:
+		showToast("Veil 已启动", "开关热键已禁用 · 右键托盘图标开启防窥")
+	default:
+		// 热键被占用时必须明说，否则用户以为按了没反应是程序坏了
+		showToast("Veil 已启动", fmt.Sprintf("开关热键 %s 被占用未生效 · 请在设置面板更换", toggleCombo))
+	}
 
 	updateTrayTip()
 
-	logf("INFO: 就绪（%s 开关，Ctrl+Alt+Shift+Q 退出）", activeHotkeyDesc)
+	logf("INFO: 就绪（开关热键 %s，生效=%v；Ctrl+Alt+Shift+Q 退出）", toggleCombo, toggleActive)
 
 	// 初始化到此结束：必须先放行主线程，再进入阻塞的消息循环。
 	// 写成 defer close(ready) 会让主线程一直等到消息循环退出（即进程结束）才继续，属于死锁。
