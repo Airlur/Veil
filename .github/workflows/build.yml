@@ -72,9 +72,11 @@ jobs:
       - name: Checksums
         shell: pwsh
         run: |
-          Get-ChildItem release -File | ForEach-Object {
+          # collect first: writing into release/ while still enumerating it locks the output file
+          $lines = @(Get-ChildItem release -File | ForEach-Object {
             '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name
-          } | Out-File -Encoding ascii release/SHA256SUMS.txt
+          })
+          $lines | Out-File -Encoding ascii release/SHA256SUMS.txt
           Get-Content release/SHA256SUMS.txt
 
       - name: Upload artifact

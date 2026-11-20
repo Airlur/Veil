@@ -27,6 +27,7 @@ Windows 被控端的防窥隐私屏保：运行后**本机物理屏幕被一张�
 | 右键菜单 | 短暂闪现 | 被遮罩盖住 |
 | UAC 弹窗、锁屏 | 盖不住 | 盖不住 |
 | 配置与 `presets\` 位置 | exe 同目录 | `%APPDATA%\Veil` |
+| 日志 | `%TEMP%\Veil.log` | `%APPDATA%\Veil\Veil.log` |
 | 获取方式 | Release 的 `Veil-portable.zip` | Release 的 `Veil-Setup.exe` |
 
 安装版依靠 Windows 的 UIAccess 机制让遮罩进入更高的窗口层级。系统要求这类程序必须带受信任的数字签名并位于 Program Files，所以它无法做成绿色版。
@@ -132,6 +133,9 @@ Veil 是覆盖层方案，桌面仍在物理屏上，因此存在固有边界（
 
 - [x] **输入法候选窗、右键菜单**：安装版（UIAccess）已解决
 
+- [ ] **排查：开启遮罩后 UU 远控端光标消失约 10 秒**
+  首次开启后远控端光标消失约 10 秒再自动恢复，之后正常。Veil 侧无对应事件，疑为 UU 内部切换光标来源的延迟。
+
 - [ ] **设置面板加入"隐藏光标"开关**
   目前只能在 `config.json` 里改 `hideCursor`。
 
@@ -181,7 +185,7 @@ powershell -ExecutionPolicy Bypass -File scripts\deploy-uiaccess.ps1   # 安装�
 powershell -ExecutionPolicy Bypass -File scripts\deploy-uiaccess.ps1 -Uninstall
 ```
 
-开发用脚本会把开发证书（`Veil Dev Code Signing`）加入本机"受信任的根证书颁发机构"，`-Uninstall` 时移除。它和安装包装的是同一个目录，二者不要同时使用。
+开发用脚本会把开发证书（`Veil Dev Code Signing`）加入本机"受信任的根证书颁发机构"，`-Uninstall` 时移除。它装在 `C:\Program Files\Veil Dev`，与安装包的 `C:\Program Files\Veil` 互不覆盖；两者共用 `%APPDATA%\Veil` 下的配置，且同一时间只能运行一个。
 
 ## 项目结构
 

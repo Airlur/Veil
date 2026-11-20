@@ -2,7 +2,7 @@
 # Needs admin (one UAC prompt). Run build-uiaccess.ps1 first.
 #
 #   1. trusts build\uiaccess\VeilDev.cer in LocalMachine\Root   (UIAccess requires a trusted signature)
-#   2. copies Veil.exe to C:\Program Files\Veil\                  (UIAccess requires a secure location)
+#   2. copies Veil.exe to C:\Program Files\Veil Dev\                (UIAccess requires a secure location)
 #   3. starts it through Explorer (UIAccess exes cannot be started with plain CreateProcess)
 #
 # Undo with:  deploy-uiaccess.ps1 -Uninstall
@@ -13,7 +13,8 @@ param([switch]$Uninstall, [switch]$NoStart)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $out  = Join-Path $root 'build\uiaccess'
-$dest = Join-Path $env:ProgramFiles 'Veil'
+# Separate from the real installer's directory (Program Files\Veil) so the two never overwrite each other.
+$dest = Join-Path $env:ProgramFiles 'Veil Dev'
 $subject = 'CN=Veil Dev Code Signing'
 
 $admin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
@@ -34,7 +35,7 @@ try {
     if ($Uninstall) {
         Get-ChildItem Cert:\LocalMachine\Root | Where-Object { $_.Subject -eq $subject } | Remove-Item
         if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
-        Write-Host 'Uninstalled: cert removed from LocalMachine\Root, Program Files\Veil deleted.'
+        Write-Host 'Uninstalled: cert removed from LocalMachine\Root, Program Files\Veil Dev deleted.'
     } else {
         $exe = Join-Path $out 'Veil.exe'
         $cer = Join-Path $out 'VeilDev.cer'

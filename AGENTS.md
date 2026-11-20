@@ -71,7 +71,7 @@ go test ./...       # 回归测试（图标构建、热键解析）
 - 产物：单文件 exe ~3.5MB，无外部依赖（WebView2 运行时 Win11 自带）。
 - `Veil.exe -probe`：遮罩自检 3 秒（验证 WDA 生效）。
 - `Veil.exe -settings`：直接打开设置窗（调试）。
-- 日志：`%TEMP%\Veil.log`。
+- 日志：便携版 `%TEMP%\Veil.log`，安装版 `%APPDATA%\Veil\Veil.log`（`logFilePath()`）。
 - **分发**：走 `build.bat dist`，不要把开发者自己的 `config.json` 和私有图带进包。
 
 ## 改代码的硬规则（血泪教训，务必遵守）
@@ -146,4 +146,6 @@ go test ./...       # 回归测试（图标构建、热键解析）
 
 **光标现状（2026-11-20 用户实测）**：1x1 透明光标下，开启遮罩后 UU 远控端光标消失约 10 秒，随后自动恢复并保持正常；物理屏始终不可见。这 10 秒是 UU 内部的行为，Veil 日志里没有对应事件，原因未查明。`rebuildOverlay` 期间不恢复光标（`keepCursorHidden`），避免换屏保图时再触发一次。
 
-**安装包（`installer/`）**：Inno Setup 脚本 `veil.iss` + 安装时签名脚本 `install-sign.ps1`。CI 产出未签名的 UIAccess exe，安装时在用户机器上生成一次性自签名证书 → 签名 → 加入 LocalMachine\Root → 删除私钥；卸载时移除证书。不共享任何签名密钥。`install-sign.ps1 -TestMode` 可免管理员演练签名流程。安装包与 `scripts\deploy-uiaccess.ps1` 装到同一目录，后装的覆盖先装的；开发证书（Veil Dev Code Signing）与安装证书（Veil Local Signing）是两张，互不清理。**安装包本身未在真机上跑通过**（开发机没装 Inno Setup），首次发版要实测安装、启动、卸载。
+**安装包（`installer/`）**：Inno Setup 脚本 `veil.iss` + 安装时签名脚本 `install-sign.ps1`。CI 产出未签名的 UIAccess exe，安装时在用户机器上生成一次性自签名证书 → 签名 → 加入 LocalMachine\Root → 删除私钥；卸载时移除证书。不共享任何签名密钥。`install-sign.ps1 -TestMode` 可免管理员演练签名流程。开发部署脚本装到 `Program Files\Veil Dev`，安装包装到 `Program Files\Veil`，互不覆盖（共用 `%APPDATA%\Veil`，单实例互斥仍然生效）；开发证书（Veil Dev Code Signing）与安装证书（Veil Local Signing）是两张，互不清理。**安装包本身未在真机上跑通过**（开发机没装 Inno Setup），首次发版要实测安装、启动、卸载。
+
+**待排查**：首次开启遮罩后 UU 远控端光标消失约 10 秒（换屏保图不再触发，已实测）。下一步可试：开启前先让 UU 处于"文件加载"路径、或对比不同光标尺寸/DPI 下的等待时间。

@@ -192,7 +192,11 @@ func notifyExistingInstance() {
 // ---------- 日志 ----------
 
 // logFilePath 返回日志文件路径（托盘"查看日志"与 initLog 共用）。
+// 便携版写 %TEMP%（不在 exe 目录留文件）；安装版和配置放在一起（%APPDATA%\Veil）。
 func logFilePath() string {
+	if d := dataDir(); d != exeDir() {
+		return filepath.Join(d, "Veil.log")
+	}
 	return filepath.Join(os.TempDir(), "Veil.log")
 }
 
