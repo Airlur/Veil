@@ -166,13 +166,16 @@
   .hk-key.inactive{border-color:#e5484d;background:#fff6f6;color:#c62828;}
   /* 用户主动禁用的热键：灰色，不是错误 */
   .hk-key.off{color:var(--muted);background:var(--soft);border-style:dashed;}
-  .hk-off{
-    margin-left:auto;flex-shrink:0;
-    background:none;border:none;padding:4px 2px;
-    font-family:inherit;font-size:12px;color:var(--sub);cursor:pointer;
+  /* 每组热键的启用开关 */
+  .hk-switch{margin-left:auto;flex-shrink:0;position:relative;width:34px;height:20px;cursor:pointer;}
+  .hk-switch input{position:absolute;opacity:0;width:0;height:0;}
+  .hk-switch span{position:absolute;inset:0;background:#cfcfd8;border-radius:10px;transition:background .15s;}
+  .hk-switch span::after{
+    content:'';position:absolute;left:2px;top:2px;width:16px;height:16px;
+    background:#fff;border-radius:50%;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s;
   }
-  .hk-off:hover{color:var(--accent);}
-  .hk-off[hidden]{display:none;}
+  .hk-switch input:checked + span{background:var(--accent);}
+  .hk-switch input:checked + span::after{transform:translateX(14px);}
   .hk-msg{margin:-2px 0 9px 86px;font-size:12px;line-height:1.9;color:#c62828;}
   .hk-msg[hidden]{display:none;}
   .hk-msg .hk-sub{color:var(--sub);}
@@ -185,9 +188,10 @@
   .hk-warn{color:#c62828;}
   .hk-desc{color:var(--muted);font-size:12px;}
   .hk-note{
-    margin-top:10px;padding-bottom:8px;
+    margin:10px 0 0;padding:0 0 8px 16px;
     color:var(--muted);font-size:11.5px;line-height:1.6;
   }
+  .hk-note li{margin:4px 0;}
   .hk-note b{color:var(--sub);font-weight:500;}
 
   /* ---------- 底部（sticky：钉在可视区底部，宽度随卡片同步） ---------- */
@@ -253,7 +257,7 @@
         <span class="hk-label">开关防窥</span>
         <button class="hk-key" id="hkToggle" onclick="recordHotkey('toggle')">Ctrl+Alt+X</button>
         <span class="hk-desc">开启 / 关闭隐私屏保</span>
-        <button class="hk-off" id="hkOffToggle" onclick="setHotkeyOff('toggle', true)">禁用</button>
+        <label class="hk-switch" title="启用 / 禁用这组快捷键"><input type="checkbox" id="hkOffToggle" checked onchange="setHotkeyOff('toggle', !this.checked)"><span></span></label>
       </div>
       <div class="hk-msg" id="hkMsgToggle" hidden></div>
     </div>
@@ -262,7 +266,7 @@
         <span class="hk-label">打开设置</span>
         <button class="hk-key" id="hkSettings" onclick="recordHotkey('settings')">Ctrl+Alt+S</button>
         <span class="hk-desc">打开 / 关闭本面板</span>
-        <button class="hk-off" id="hkOffSettings" onclick="setHotkeyOff('settings', true)">禁用</button>
+        <label class="hk-switch" title="启用 / 禁用这组快捷键"><input type="checkbox" id="hkOffSettings" checked onchange="setHotkeyOff('settings', !this.checked)"><span></span></label>
       </div>
       <div class="hk-msg" id="hkMsgSettings" hidden></div>
     </div>
@@ -271,16 +275,17 @@
         <span class="hk-label">退出程序</span>
         <button class="hk-key" id="hkQuit" onclick="recordHotkey('quit')">Ctrl+Alt+C</button>
         <span class="hk-desc">彻底退出 Veil</span>
-        <button class="hk-off" id="hkOffQuit" onclick="setHotkeyOff('quit', true)">禁用</button>
+        <label class="hk-switch" title="启用 / 禁用这组快捷键"><input type="checkbox" id="hkOffQuit" checked onchange="setHotkeyOff('quit', !this.checked)"><span></span></label>
       </div>
       <div class="hk-msg" id="hkMsgQuit" hidden></div>
     </div>
-    <div class="hk-note">
-      点击热键框后按下新的组合键，按 Esc 取消。字母、数字等按键需搭配 Ctrl、Alt 或 Win；F1~F12 可搭配任意修饰键（含 Shift）。
-      按下后面板没有反应，通常说明该组合已被其他程序占用。不需要的快捷键可以单独禁用，也可以在托盘菜单里一键全部禁用。<br>
-      固定兜底键 <b>Ctrl+Alt+Shift+Q</b> 始终可以强制退出（不可禁用），防止屏幕被遮住后无法自救。
-      <span class="hk-warn" id="hkEscapeWarn" hidden>（当前被其他程序占用，未生效）</span>
-    </div>
+    <ul class="hk-note">
+      <li>点击热键框，按下新的组合键即可修改；按 Esc 取消。</li>
+      <li>字母、数字等按键需搭配 Ctrl、Alt 或 Win；F1~F12 搭配任意修饰键即可（含 Shift）。</li>
+      <li>按下后面板没有反应、反而触发了别的程序，说明该组合已被那个程序占用，请换一个。</li>
+      <li>不需要的快捷键可用右侧开关单独关闭，也可以在托盘菜单里一键全部禁用。</li>
+      <li>兜底键 <b>Ctrl+Alt+Shift+Q</b> 始终可以强制退出，不可禁用。<span class="hk-warn" id="hkEscapeWarn" hidden>（当前被其他程序占用，未生效）</span></li>
+    </ul>
   </div>
 
   <div class="spacer"></div>
@@ -463,9 +468,7 @@ async function loadHotkeys(reset){
     if(!busy) btn.textContent = st.disabled ? st.combo + '（已禁用）' : st.combo;
     btn.classList.toggle('off', st.disabled && !busy);
     btn.classList.toggle('inactive', !st.active && !st.disabled && !busy);
-    const off = document.getElementById(HK[kind].off);
-    off.textContent = st.disabled ? '启用' : '禁用';
-    off.onclick = ()=>setHotkeyOff(kind, !st.disabled);
+    document.getElementById(HK[kind].off).checked = !st.disabled;
     if(st.active || st.disabled){
       if(hkNotes[kind] && hkNotes[kind].auto) setHotkeyNote(kind, '');
     }else if(!hkNotes[kind]){
@@ -535,7 +538,7 @@ async function submitHotkey(kind, mods, vk){
 }
 
 async function setHotkeyOff(kind, off){
-  if(recording) return;
+  if(recording){ loadHotkeys(); return; } // 录制中不处理，把开关拨回原位
   let r;
   try{ r = JSON.parse(await window.goSetHotkeyOff(kind, off)); }
   catch(e){ r = {error:'返回格式异常'}; }
@@ -549,6 +552,12 @@ async function setHotkeyOff(kind, off){
 }
 
 window.addEventListener('DOMContentLoaded', boot);
+// 开关 = 启用 / 禁用该组快捷键（checked 为启用状态）
+for(const kind in HK){
+  document.getElementById(HK[kind].off).addEventListener('change', e=>{
+    setHotkeyOff(kind, !e.target.checked);
+  });
+}
 window.addEventListener('contextmenu', e=>e.preventDefault());
 </script>
 </body>

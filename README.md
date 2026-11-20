@@ -28,7 +28,7 @@ Windows 被控端的防窥隐私屏保：运行后**本机物理屏幕被一张�
 | UAC 弹窗、锁屏 | 盖不住 | 盖不住 |
 | 配置与 `presets\` 位置 | exe 同目录 | `%APPDATA%\Veil` |
 | 日志 | `%TEMP%\Veil.log` | `%APPDATA%\Veil\Veil.log` |
-| 获取方式 | Release 的 `Veil-portable.zip` | Release 的 `Veil-Setup.exe` |
+| 获取方式 | Release 里的 `…-portable.zip` | Release 里的 `…-setup.exe` |
 
 安装版依靠 Windows 的 UIAccess 机制让遮罩进入更高的窗口层级。系统要求这类程序必须带受信任的数字签名并位于 Program Files，所以它无法做成绿色版。
 

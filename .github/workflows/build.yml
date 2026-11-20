@@ -30,6 +30,11 @@ jobs:
         run: |
           $v = if ($env:GITHUB_REF -like 'refs/tags/v*') { $env:GITHUB_REF_NAME.Substring(1) } else { '0.0.0-dev' }
           "version=$v" >> $env:GITHUB_OUTPUT
+          # release notes: docs/release-notes/<tag>.md, falling back to a one-line body
+          $notes = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+          $src = "docs/release-notes/$($env:GITHUB_REF_NAME).md"
+          if (Test-Path $src) { Copy-Item $src $notes } else { "Veil $v" | Out-File -Encoding utf8 $notes }
+          "notes=$notes" >> $env:GITHUB_OUTPUT
 
       # ---- portable: single exe, no manifest ----
       - name: Build portable
@@ -51,12 +56,13 @@ jobs:
           注意：不要放来源不明的版权素材，分发时也请自行确认。
           '@ | Out-File -Encoding utf8 dist/presets/README.txt
           New-Item -ItemType Directory -Force -Path release | Out-Null
-          Compress-Archive -Path dist/* -DestinationPath release/Veil-portable.zip -Force
+          Compress-Archive -Path dist/* -DestinationPath "release/Veil-${{ steps.ver.outputs.version }}-windows-amd64-portable.zip" -Force
 
       # ---- installer: UIAccess exe, signed on the user's machine at install time ----
       - name: Build UIAccess exe (unsigned)
         shell: pwsh
         run: |
+          $env:PATH += ";$(go env GOPATH)\bin"
           go install github.com/akavel/rsrc@v0.10.2
           ./scripts/build-uiaccess.ps1 -NoSign
 
@@ -67,7 +73,7 @@ jobs:
           if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
           & $iscc "/DAppVersion=${{ steps.ver.outputs.version }}" installer\veil.iss
           if ($LASTEXITCODE -ne 0) { throw 'ISCC failed' }
-          Copy-Item build\installer\Veil-Setup.exe release\
+          Copy-Item build\installer\Veil-Setup.exe "release\Veil-${{ steps.ver.outputs.version }}-windows-amd64-setup.exe"
 
       - name: Checksums
         shell: pwsh
@@ -78,6 +84,9 @@ jobs:
           })
           $lines | Out-File -Encoding ascii release/SHA256SUMS.txt
           Get-Content release/SHA256SUMS.txt
+          # append the checksums to the release notes
+          $fence = '```'
+          @('', '### SHA256', '', $fence) + $lines + @($fence) | Add-Content -Encoding utf8 '${{ steps.ver.outputs.notes }}'
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -90,4 +99,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: release/*
-          generate_release_notes: true
+          body_path: ${{ steps.ver.outputs.notes }}
