@@ -22,8 +22,12 @@ var (
 )
 
 func initTrayIcon() {
-	// 优先从 exe 内嵌资源取图标（rsrc 生成的图标资源 ID 为 1）
-	r, _, _ := procLoadIconW.Call(uintptr(getModuleHandle()), 1)
+	// 优先从 exe 内嵌资源取图标。rsrc 按顺序分配资源 ID：便携版只有图标（ID 1），
+	// UIAccess 版先放 manifest（占 ID 1）、图标顺延到 ID 2。
+	var r uintptr
+	for id := uintptr(1); id <= 3 && r == 0; id++ {
+		r, _, _ = procLoadIconW.Call(uintptr(getModuleHandle()), id)
+	}
 	if r == 0 {
 		// 兜底：系统默认图标
 		r, _, _ = procLoadIconW.Call(0, uintptr(IDI_APPLICATION))
@@ -138,6 +142,8 @@ func showTrayMenu() {
 	procAppendMenuW.Call(hMenu, MF_SEPARATOR, 0, 0)
 	addItem(CMD_SETTINGS, "设置隐私屏保")
 	addItem(CMD_OPENLOG, "查看日志")
+	// 默认关闭。只有远控端看不到光标时才需要开；UU 自己会画光标，开了会有拖影
+	addRadio(CMD_REMOTECURSOR, "远控端替身光标", getConfig().RemoteCursor)
 	procAppendMenuW.Call(hMenu, MF_SEPARATOR, 0, 0)
 	addItem(CMD_EXIT, "退出")
 
@@ -180,6 +186,8 @@ func showTrayMenu() {
 	case CMD_OPENLOG:
 		openLogLocation()
 		return
+	case CMD_REMOTECURSOR:
+		setRemoteCursor(!getConfig().RemoteCursor)
 
 	case CMD_SETTINGS:
 		go openSettingsWindow() // 异步：创建会阻塞

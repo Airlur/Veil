@@ -124,6 +124,8 @@ func createOneOverlay(mon Monitor) (*overlayWindow, error) {
 	procShowWindow.Call(hwnd, SW_SHOWNOACTIVATE)
 	// 显示后再设一次，防止某些驱动在首次 ShowWindow 时重置状态
 	setExcludeFromCapture(ow.hwnd)
+	// band=2 (ZBID_UIACCESS) 才能从层级上压住右键菜单/输入法候选窗；band=1 是普通桌面层
+	logf("INFO: 遮罩层级 %s band=%d uiAccess=%v", mon.Device, windowBand(ow.hwnd), hasUIAccess())
 
 	return ow, nil
 }
@@ -299,6 +301,7 @@ func enableOverlay() {
 	// 150ms 抢一次置顶：右键菜单/输入法窗这类系统置顶 UI 新弹出时会盖在遮罩上，
 	// 加快抢回频率能把它们"一闪而过"的可见时间压到最低。
 	procSetTimer.Call(uintptr(controlHwnd), TIMER_KEEPTOP, 150, 0)
+	hideCursors()
 	// 不再冻结物理鼠标：UU 实测证明它只是隐藏光标、并不拦截事件，
 	// 吞掉移动事件反而让本地点击落点与光标位置脱节。
 	logf("INFO: 遮罩已开启，共 %d 块屏 (失败 %d, 线程=%d/UI=%d)", len(activeOverlays), failed, curThreadID(), uiThreadID)
@@ -316,6 +319,7 @@ func disableOverlay() {
 		return
 	}
 	procKillTimer.Call(uintptr(controlHwnd), TIMER_KEEPTOP)
+	showCursors()
 	for _, ow := range activeOverlays {
 		procDestroyWindow.Call(uintptr(ow.hwnd))
 		ow.releaseBitmap()
@@ -339,6 +343,7 @@ func rebuildOverlay() {
 
 // keepOnTop 由定时器驱动，抵抗其他置顶窗口抢占与 DWM 状态重置。
 func keepOnTop() {
+	defer placeCursorWindow(0) // 遮罩排好后，把替身光标重新插到遮罩正下方
 	for _, ow := range activeOverlays {
 		procSetWindowPos.Call(
 			uintptr(ow.hwnd), HWND_TOPMOST,
@@ -421,6 +426,9 @@ func createControlWindow() error {
 		return err
 	}
 	controlHwnd = windows.Handle(hwnd)
+	// UIAccess 版进程的窗口受 UIPI 保护，便携版实例发来的退出通知会被系统丢弃
+	// （症状："旧实例 3 秒内未退出"）。显式放行这一条消息，保住"再双击一次 exe 自救"。
+	procChangeWindowMessageFilterEx.Call(hwnd, uintptr(cmdQuit), MSGFLT_ALLOW, 0)
 	return nil
 }
 
@@ -563,6 +571,8 @@ func controlWndProc(hwnd windows.Handle, msg uint32, wParam, lParam uintptr) uin
 	case WM_TIMER:
 		if wParam == TIMER_KEEPTOP {
 			keepOnTop()
+		} else if wParam == TIMER_CURSOR {
+			syncCursorWindow()
 		} else if wParam == TIMER_PREVIEW {
 			procKillTimer.Call(uintptr(controlHwnd), TIMER_PREVIEW)
 			renderOverride.Store(nil) // 清掉预览临时配置

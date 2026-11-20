@@ -80,3 +80,28 @@ func TestThumbPayloadSize(t *testing.T) {
 		t.Fatalf("缩略图体积异常: %d", len(s))
 	}
 }
+
+// 替身光标渲染：系统箭头光标必须渲染出可见像素（同时可用来确认系统光标没有停留在透明状态）。
+func TestRenderCursorShape(t *testing.T) {
+	h, _, _ := procLoadCursorW.Call(0, 32512)
+	s := renderCursorShape(h)
+	if s == nil {
+		t.Fatal("renderCursorShape 返回 nil")
+	}
+	pix := s.pix
+	opaque, partial := 0, 0
+	for i := 3; i < len(pix); i += 4 {
+		if pix[i] == 255 {
+			opaque++
+		} else if pix[i] > 0 {
+			partial++
+		}
+	}
+	t.Logf("箭头光标 %dx%d 热点(%d,%d) 不透明像素=%d 半透明=%d", s.w, s.h, s.hotX, s.hotY, opaque, partial)
+	if opaque == 0 {
+		t.Fatal("箭头光标没有任何不透明像素")
+	}
+	if opaque == int(s.w)*int(s.h) {
+		t.Fatal("整块位图都不透明：alpha 反推失败")
+	}
+}

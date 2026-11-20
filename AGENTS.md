@@ -6,7 +6,7 @@
 
 Veil（隐幕）：Windows 被控端的"防窥隐私屏保"。运行后本机物理屏被一张图盖住，但远控软件（UU 远程、ToDesk 等）看到的仍是真实桌面，鼠标键盘照常操作。替代 UU 远程的付费防窥功能。
 
-**技术路线**：覆盖层窗口 + `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)`。不是虚拟显示器方案——这是理解所有设计取舍的前提。
+**技术路线**：覆盖层窗口 + `SetWindowDisplayAffinity(WDA_EXCLUDEFROMCAPTURE)`。不是虚拟显示器方案——这是理解所有设计取舍的前提。分便携版与 UIAccess 安装版两种构建，见文末「UIAccess 安装版与光标隐藏」。
 
 ## 核心机制（改代码前必读）
 
@@ -103,14 +103,35 @@ go test ./...       # 回归测试（图标构建、热键解析）
 ## 当前状态与待办
 
 - 二次启动 = 重启语义（通知旧实例退出 → 轮询互斥体 → 新实例接管）。
-- 覆盖层方案的固有边界（见 README"与 UU 的区别"章节）：物理屏可见光标、IME 候选窗、右键菜单闪现（150ms 抢顶缓解）。要根治需虚拟显示器驱动，是独立的大工程。
+- 便携版的固有边界：IME 候选窗盖不住、右键菜单闪现（150ms 抢顶缓解）。安装版（UIAccess）已解决这两项；光标隐藏两个版本都有。UAC 弹窗和锁屏两个版本都盖不住，要根治需虚拟显示器驱动。
 - **已完成**：托盘"查看日志"（explorer /select 定位日志文件）。
 - **未完成**：设置面板缺"遮蔽全部显示器"开关——`goSetAllMonitors` binding 已存在但前端没有入口，多屏用户无法切到只遮主屏（当前固定遮蔽全部）。
-- **计划中**：设置面板重构为左侧导航分页（常规/快捷键/显示/高级/关于）、透明光标（SetSystemCursor + 恢复机制）、菜单图标开关（代码已注释在 `tray.go` showTrayMenu）、开机自启、多语言。完整清单见 README「后续计划」。
-- **明确不做（需换技术路线）**：输入法候选窗 / 右键菜单在物理屏闪现——系统级置顶 UI，覆盖层方案无解，需虚拟显示器驱动（WDK + 签名）。
+- **计划中**：设置面板重构为左侧导航分页（常规/快捷键/显示/高级/关于）、菜单图标开关（代码已注释在 `tray.go` showTrayMenu）、开机自启、多语言。完整清单见 README「后续计划」。
+- **明确不做（需换技术路线）**：盖住 UAC 弹窗 / 锁屏——它们在独立的安全桌面上，任何窗口层级都无效，需虚拟显示器驱动。
 
 ## 与用户的约定
 
 - 用户偏好简洁直接的中文沟通；UI 改动先渲染自查再交付，纯文案/数值修改不必截图。
 - 用户自定义过的值优先于代码默认值：config.json 里 toggle=Ctrl+Alt+X、quit=Ctrl+Alt+C 是用户的实际选择，改默认值时不要覆盖他的 config.json。
 - UU 素材图（presets/ 里 15 张）仅供用户本机使用，分发时必须移除。
+
+## UIAccess 安装版与光标隐藏（分支 feat/uiaccess-overlay）
+
+**两种构建**：便携版（`build.bat`，行为不变）与 UIAccess 安装版（`scripts\build-uiaccess.ps1` 构建签名 → `scripts\deploy-uiaccess.ps1` 安装，需一次 UAC；`-Uninstall` 撤销）。
+
+- **UIAccess 的作用**：进程带 UIAccess 令牌时，普通 `CreateWindowExW` 建的置顶窗口自动进入更高的 Z 序 band（日志 `遮罩层级 ... band=2 uiAccess=true`），从层级上压住右键菜单和输入法候选窗（含微软拼音，已实测）。不需要 `CreateWindowInBand`。UAC 弹窗和锁屏仍盖不住。
+- **三个硬条件**：manifest `uiAccess="true"`（`veil.uiaccess.manifest`，只在安装版构建时临时换入 syso）+ 受信任的签名 + 位于 Program Files。缺一个 exe 就直接启动失败，所以便携版绝不能嵌这个 manifest。
+- **启动方式**：UIAccess exe 不能被 `CreateProcess` 直接拉起（报"从服务器返回了一个参照"），要走 ShellExecute / 资源管理器。看门狗因此用 `windows.ShellExecute`。
+- **UIPI**：UIAccess 进程的窗口收不到普通进程的 PostMessage。控制窗口用 `ChangeWindowMessageFilterEx` 放行了 `cmdQuit`，否则便携版实例无法通知安装版退出。
+- **数据目录**：`dataDir()`——exe 同目录可写就用它（便携版），否则 `%APPDATA%\Veil`（安装版）。config.json 和 `presets\` 都跟它走，新代码不要再直接用 `exeDir()` 存数据。
+- **`tools/bandscan`**：按实际 Z 序列出窗口及其 band，排查"谁盖在遮罩上面"。
+
+**光标（`cursor.go`）**：遮罩开启时 `SetSystemCursor` 把系统标准光标换成透明（两个版本都生效）。可选的"替身光标"默认关闭：一个不设捕获排除、插在遮罩正下方的小窗口（物理屏不可见、远控端可见），给看不到被控端光标的远控软件用。UU 自己会画光标，开了替身会有拖影（已实测），所以默认关。
+
+- 恢复三重保险：关闭遮罩时 `SPI_SETCURSORS`；看门狗进程 `Veil.exe -cursor-watchdog <pid>`；每次启动无条件恢复。
+- config.json 开关：`"hideCursor"`（缺省 true）控制整个功能；`"remoteCursor"`（缺省 false）控制替身光标。
+- 边界：应用自绘光标不受 `SetSystemCursor` 影响，仍会显示在物理屏。
+- 实测用例默认跳过（会真的换系统光标）：`set VEIL_CURSOR_E2E=1 && go test -count=1 -run CursorE2E -v .`；崩溃恢复用例另需 `VEIL_WATCHDOG_EXE` 指向一个非 UIAccess 的 Veil.exe，且其结果为进程被杀（FAIL 属预期），随后跑 `TestCursorE2EAfterCrash` 判定。
+- **替身光标 Z 序（已踩坑）**：只能用 `SetWindowPos(cursorHwnd, 遮罩hwnd, …)` 插到遮罩正下方（`placeCursorWindow`）。早期"先提替身到 TOPMOST、再提遮罩"的写法，每个抢顶周期替身都会在遮罩上面露一帧，物理屏表现为光标不停闪烁。
+- **图标资源 ID**：rsrc 按顺序编号，UIAccess 版 manifest 占 ID 1、图标是 ID 2；`initTrayIcon` 依次尝试 1–3。
+- 托盘菜单「远控端替身光标」对应 `remoteCursor`，切换立即生效。

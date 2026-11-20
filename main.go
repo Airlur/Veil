@@ -22,6 +22,14 @@ const (
 var logFile *os.File
 
 func main() {
+	// 看门狗子进程：只负责等主进程结束后恢复光标，不走后面的任何初始化
+	if len(os.Args) > 2 && os.Args[1] == watchdogFlag {
+		runCursorWatchdog(os.Args[2])
+		return
+	}
+	// 上次若异常退出，系统光标可能还是透明的：无条件恢复一次
+	restoreSystemCursors()
+
 	// 必须在任何窗口创建之前声明 DPI 感知，否则 200% 缩放下遮罩只盖住 1/4 屏
 	setProcessDpiAwareness()
 	initLog()
@@ -54,6 +62,7 @@ func main() {
 	}
 
 	loadConfig()
+	logf("INFO: 数据目录 %s", dataDir())
 	initTrayIcon()
 
 	// -probe：自检模式。开启遮罩 3 秒后自动退出，用于在命令行确认底层 API 是否生效。

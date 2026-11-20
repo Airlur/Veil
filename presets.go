@@ -54,7 +54,7 @@ func renderPreset(id string, w, h int) *image.RGBA {
 	// exe 同目录 presets/ 下的图片作为动态预设（用户随时丢图进来）
 	if strings.HasPrefix(id, "file:") {
 		name := strings.TrimPrefix(id, "file:")
-		if img, err := loadCustomImage(filepath.Join(exeDir(), "presets", name)); err == nil {
+		if img, err := loadCustomImage(filepath.Join(presetsDir(), name)); err == nil {
 			return coverImage(img, w, h)
 		}
 		return renderPreset("black", w, h)
@@ -369,7 +369,7 @@ func thumbFor(id string) string {
 	var uri string
 	if strings.HasPrefix(id, "file:") {
 		name := strings.TrimPrefix(id, "file:")
-		uri = thumbDataURIfromFile(filepath.Join(exeDir(), "presets", name))
+		uri = thumbDataURIfromFile(filepath.Join(presetsDir(), name))
 	} else {
 		uri = thumbDataURI(id)
 	}
@@ -400,7 +400,7 @@ func presetList() []Preset {
 		// 缩略图由前端按需调用 goThumb(id) 单独获取。
 		out = append(out, Preset{ID: d.ID, Name: d.Name})
 	}
-	dir := filepath.Join(exeDir(), "presets")
+	dir := presetsDir()
 	if entries, err := os.ReadDir(dir); err == nil {
 		for _, e := range entries {
 			if e.IsDir() {
@@ -415,7 +415,7 @@ func presetList() []Preset {
 			out = append(out, Preset{ID: id, Name: name})
 		}
 	}
-	logf("INFO: 预设列表 %d 个（内置 %d + 目录 presets/）", len(out), len(presetDefs))
+	logf("INFO: 预设列表 %d 个（内置 %d + 目录 %s）", len(out), len(presetDefs), dir)
 	return out
 }
 

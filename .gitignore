@@ -15,3 +15,6 @@ presets/*
 check.png
 Thumbs.db
 *-preview.png
+
+# UIAccess 安装版构建产物
+build/

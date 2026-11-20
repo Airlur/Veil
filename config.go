@@ -1,4 +1,5 @@
-// config.go — 配置持久化，存放于程序同目录 config.json（便携式，不写注册表）。
+// config.go — 配置持久化（config.json，不写注册表）。
+// 便携版存放于程序同目录；安装版（Program Files 不可写）存放于 %APPDATA%\Veil。
 package main
 
 import (
@@ -27,6 +28,15 @@ type Config struct {
 	HotkeyQuit string `json:"hotkeyQuit"`
 	// HotkeySettings 打开设置面板的热键
 	HotkeySettings string `json:"hotkeySettings"`
+	// HideCursor 遮罩期间隐藏物理屏鼠标光标。指针类型：老配置没有这个字段时按 true 处理
+	HideCursorOpt *bool `json:"hideCursor,omitempty"`
+	// RemoteCursor 隐藏光标时给远控端补一个替身光标。默认关闭：
+	// UU 远程自己会画光标，叠上替身会出现拖影（已实测）。远控端看不到光标的软件才需要开。
+	// 远控端出现两个光标（说明远控软件自己会画光标）时设为 false
+	RemoteCursorOpt *bool `json:"remoteCursor,omitempty"`
+	// 解析后的生效值（不持久化）
+	HideCursor   bool `json:"-"`
+	RemoteCursor bool `json:"-"`
 }
 
 // 默认热键。兜底键 fallbackHotkey 永远固定，不参与自定义。
@@ -52,6 +62,8 @@ func defaultConfig() Config {
 		HotkeyToggle: defaultHotkeyToggle,
 		HotkeyQuit:       defaultHotkeyQuit,
 		HotkeySettings: defaultHotkeySettings,
+		HideCursor:     true,
+		RemoteCursor:   false,
 	}
 }
 
@@ -64,9 +76,41 @@ func exeDir() string {
 	return filepath.Dir(exe)
 }
 
-// configFilePath 返回配置文件路径：exe 同目录。
+var (
+	dataDirOnce sync.Once
+	dataDirPath string
+)
+
+// dataDir 返回用户数据目录（config.json、presets\）。
+// exe 同目录可写时就用它（便携版行为不变）；不可写（安装在 Program Files 的
+// UIAccess 版）时退到 %APPDATA%\Veil。
+func dataDir() string {
+	dataDirOnce.Do(func() {
+		dataDirPath = exeDir()
+		probe := filepath.Join(dataDirPath, ".veil-write-test")
+		if f, err := os.Create(probe); err == nil {
+			f.Close()
+			os.Remove(probe)
+			return
+		}
+		if base, err := os.UserConfigDir(); err == nil {
+			dir := filepath.Join(base, appName)
+			if os.MkdirAll(filepath.Join(dir, "presets"), 0755) == nil {
+				dataDirPath = dir
+			}
+		}
+	})
+	return dataDirPath
+}
+
+// presetsDir 返回目录预设所在文件夹。
+func presetsDir() string {
+	return filepath.Join(dataDir(), "presets")
+}
+
+// configFilePath 返回配置文件路径。
 func configFilePath() string {
-	return filepath.Join(exeDir(), "config.json")
+	return filepath.Join(dataDir(), "config.json")
 }
 
 func loadConfig() {
@@ -98,6 +142,8 @@ func loadConfig() {
 		c.AppliedPresetID = c.PresetID
 		c.AppliedCustomImage = c.CustomImage
 	}
+	c.HideCursor = c.HideCursorOpt == nil || *c.HideCursorOpt
+	c.RemoteCursor = c.RemoteCursorOpt != nil && *c.RemoteCursorOpt
 	cfgMu.Lock()
 	cfg = c
 	cfgMu.Unlock()
