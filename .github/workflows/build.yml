@@ -24,13 +24,21 @@ jobs:
       - name: Test
         run: go test ./...
 
-      - name: Build
+      - name: Version
+        id: ver
+        shell: pwsh
+        run: |
+          $v = if ($env:GITHUB_REF -like 'refs/tags/v*') { $env:GITHUB_REF_NAME.Substring(1) } else { '0.0.0-dev' }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      # ---- portable: single exe, no manifest ----
+      - name: Build portable
         run: >
           go build -trimpath -ldflags "-H=windowsgui -s -w"
           -o Veil.exe .
         shell: pwsh
 
-      - name: Package (green portable zip)
+      - name: Package portable zip
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist/presets | Out-Null
@@ -42,17 +50,42 @@ jobs:
           重启 Veil 后会自动出现在设置面板的预设网格里。
           注意：不要放来源不明的版权素材，分发时也请自行确认。
           '@ | Out-File -Encoding utf8 dist/presets/README.txt
-          Compress-Archive -Path dist/* -DestinationPath Veil-windows.zip -Force
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          Compress-Archive -Path dist/* -DestinationPath release/Veil-portable.zip -Force
+
+      # ---- installer: UIAccess exe, signed on the user's machine at install time ----
+      - name: Build UIAccess exe (unsigned)
+        shell: pwsh
+        run: |
+          go install github.com/akavel/rsrc@v0.10.2
+          ./scripts/build-uiaccess.ps1 -NoSign
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          & $iscc "/DAppVersion=${{ steps.ver.outputs.version }}" installer\veil.iss
+          if ($LASTEXITCODE -ne 0) { throw 'ISCC failed' }
+          Copy-Item build\installer\Veil-Setup.exe release\
+
+      - name: Checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem release -File | ForEach-Object {
+            '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name
+          } | Out-File -Encoding ascii release/SHA256SUMS.txt
+          Get-Content release/SHA256SUMS.txt
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: Veil-windows
-          path: Veil-windows.zip
+          path: release/*
 
       - name: Release (on tag)
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          files: Veil-windows.zip
+          files: release/*
           generate_release_notes: true

@@ -239,6 +239,9 @@ func fillBlack(hdc uintptr) {
 // 所以所有遮罩操作都必须在这个线程执行。
 var uiThreadID uint32
 
+// keepCursorHidden 为 true 时 disableOverlay 不恢复光标（rebuildOverlay 使用）
+var keepCursorHidden bool
+
 // previewWasOn 记录预览前遮罩是否已开启（决定 2.5 秒后恢复还是关闭）
 var previewWasOn bool
 
@@ -319,7 +322,9 @@ func disableOverlay() {
 		return
 	}
 	procKillTimer.Call(uintptr(controlHwnd), TIMER_KEEPTOP)
-	showCursors()
+	if !keepCursorHidden {
+		showCursors()
+	}
 	for _, ow := range activeOverlays {
 		procDestroyWindow.Call(uintptr(ow.hwnd))
 		ow.releaseBitmap()
@@ -334,11 +339,14 @@ func disableOverlay() {
 // rebuildOverlay 配置变化后重建（例如更换图片、切换屏数）。
 func rebuildOverlay() {
 	wasOn := overlayOn
+	// 重建期间保持光标隐藏：恢复再隐藏会让远控软件多经历一次光标切换
+	keepCursorHidden = wasOn
 	disableOverlay()
 	if wasOn {
 		// 让 DWM 有一帧时间清理，避免新窗口复用旧句柄
 		enableOverlay()
 	}
+	keepCursorHidden = false
 }
 
 // keepOnTop 由定时器驱动，抵抗其他置顶窗口抢占与 DWM 状态重置。

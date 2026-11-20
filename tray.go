@@ -21,11 +21,21 @@ var (
 	trayIcon  windows.Handle
 )
 
+// appIconResID 返回 exe 内嵌图标的资源 ID（找不到返回 0）。
+// rsrc 按顺序分配 ID：便携版只有图标（ID 1），UIAccess 版 manifest 占 ID 1、图标是 ID 2。
+func appIconResID() uintptr {
+	for id := uintptr(1); id <= 3; id++ {
+		if h, _, _ := procLoadIconW.Call(uintptr(getModuleHandle()), id); h != 0 {
+			return id
+		}
+	}
+	return 0
+}
+
 func initTrayIcon() {
-	// 优先从 exe 内嵌资源取图标。rsrc 按顺序分配资源 ID：便携版只有图标（ID 1），
-	// UIAccess 版先放 manifest（占 ID 1）、图标顺延到 ID 2。
+	// 优先从 exe 内嵌资源取图标
 	var r uintptr
-	for id := uintptr(1); id <= 3 && r == 0; id++ {
+	if id := appIconResID(); id != 0 {
 		r, _, _ = procLoadIconW.Call(uintptr(getModuleHandle()), id)
 	}
 	if r == 0 {

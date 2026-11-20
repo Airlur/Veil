@@ -18,3 +18,4 @@ Thumbs.db
 
 # UIAccess 安装版构建产物
 build/
+installer/Output/

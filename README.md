@@ -27,9 +27,22 @@ Windows 被控端的防窥隐私屏保：运行后**本机物理屏幕被一张�
 | 右键菜单 | 短暂闪现 | 被遮罩盖住 |
 | UAC 弹窗、锁屏 | 盖不住 | 盖不住 |
 | 配置与 `presets\` 位置 | exe 同目录 | `%APPDATA%\Veil` |
-| 获取方式 | Release 下载 / `build.bat` | 目前只能本机自行构建（见「构建」） |
+| 获取方式 | Release 的 `Veil-portable.zip` | Release 的 `Veil-Setup.exe` |
 
 安装版依靠 Windows 的 UIAccess 机制让遮罩进入更高的窗口层级。系统要求这类程序必须带受信任的数字签名并位于 Program Files，所以它无法做成绿色版。
+
+### 安装版会对系统做什么
+
+本项目没有购买代码签名证书，安装包本身未签名，运行时 Windows 会提示"未知发布者"。安装过程（需管理员确认一次）会：
+
+1. 把程序装到 `C:\Program Files\Veil`
+2. 在**你的电脑上**现场生成一张自签名证书（`Veil Local Signing`），用它给 `Veil.exe` 签名
+3. 把这张证书加入本机"受信任的根证书颁发机构"
+4. **立即删除证书私钥**——之后任何人（包括本项目）都无法再用这张证书签别的程序
+
+卸载时证书一并移除。每台电脑的证书都是各自生成的，互不相同。下载后可用 Release 里的 `SHA256SUMS.txt` 校验文件。
+
+已知现象：刚开启遮罩后，UU 远控端的鼠标光标会消失约 10 秒再恢复，之后正常。
 
 ## 环境要求
 
@@ -119,9 +132,6 @@ Veil 是覆盖层方案，桌面仍在物理屏上，因此存在固有边界（
 
 - [x] **输入法候选窗、右键菜单**：安装版（UIAccess）已解决
 
-- [ ] **安装版的正式分发**
-  目前用本机自签名证书，只能自己构建自己用。发给别人需要正式的代码签名证书和安装包。
-
 - [ ] **设置面板加入"隐藏光标"开关**
   目前只能在 `config.json` 里改 `hideCursor`。
 
@@ -154,7 +164,16 @@ go test ./...       # 回归测试
 go build -trimpath -ldflags "-H=windowsgui -s -w" -o Veil.exe .
 ```
 
-安装版（在 PowerShell 中，需已安装 `rsrc`：`go install github.com/akavel/rsrc@latest`）：
+安装包（需 [Inno Setup 6](https://jrsoftware.org/isinfo.php) 与 `rsrc`：`go install github.com/akavel/rsrc@latest`）：
+
+```
+powershell -ExecutionPolicy Bypass -File scripts\build-uiaccess.ps1 -NoSign
+ISCC /DAppVersion=1.1.0 installer\veil.iss        # 产出 build\installer\Veil-Setup.exe
+```
+
+推送 `v*` tag 时 GitHub Actions 会自动构建便携版 zip、安装包和 `SHA256SUMS.txt` 并发布到 Release。
+
+开发调试用的安装版（不经安装包，用开发机上的固定证书）：
 
 ```
 powershell -ExecutionPolicy Bypass -File scripts\build-uiaccess.ps1    # 构建并用本机自签名证书签名
@@ -162,7 +181,7 @@ powershell -ExecutionPolicy Bypass -File scripts\deploy-uiaccess.ps1   # 安装�
 powershell -ExecutionPolicy Bypass -File scripts\deploy-uiaccess.ps1 -Uninstall
 ```
 
-安装脚本会把自签名证书加入本机"受信任的根证书颁发机构"，卸载时移除。该证书的私钥只在构建它的那台电脑上，因此这样构建出的安装版只适合本机自用。
+开发用脚本会把开发证书（`Veil Dev Code Signing`）加入本机"受信任的根证书颁发机构"，`-Uninstall` 时移除。它和安装包装的是同一个目录，二者不要同时使用。
 
 ## 项目结构
 
@@ -172,7 +191,8 @@ presets\            目录预设（放入图片自动加入预设网格）
 config.json         用户配置（便携式）
 assets\menu\        菜单图标源文件
 ui\index.html       设置面板 UI（编译时嵌入）
-scripts\            安装版的构建 / 安装脚本
+installer\          安装包脚本（Inno Setup）与安装时签名脚本
+scripts\            安装版的构建脚本、开发用部署脚本
 tools\              图标生成工具（genlogo / genmenu）、窗口层级排查（bandscan）
 AGENTS.md           开发者 / Agent 迭代指南（含完整踩坑记录）
 ```

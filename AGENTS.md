@@ -143,3 +143,7 @@ go test ./...       # 回归测试（图标构建、热键解析）
 - 排查手段：`GetIconInfo` 看其他进程读到的光标尺寸（随调用线程的 DPI 感知缩放）；Mag 隐藏不改变 `GetCursorInfo` 的结果，也不产生 OBJID_CURSOR 的 WinEvent。
 
 - **图标资源 ID**：rsrc 按顺序编号，UIAccess 版 manifest 占 ID 1、图标是 ID 2；`initTrayIcon` 依次尝试 1–3。
+
+**光标现状（2026-11-20 用户实测）**：1x1 透明光标下，开启遮罩后 UU 远控端光标消失约 10 秒，随后自动恢复并保持正常；物理屏始终不可见。这 10 秒是 UU 内部的行为，Veil 日志里没有对应事件，原因未查明。`rebuildOverlay` 期间不恢复光标（`keepCursorHidden`），避免换屏保图时再触发一次。
+
+**安装包（`installer/`）**：Inno Setup 脚本 `veil.iss` + 安装时签名脚本 `install-sign.ps1`。CI 产出未签名的 UIAccess exe，安装时在用户机器上生成一次性自签名证书 → 签名 → 加入 LocalMachine\Root → 删除私钥；卸载时移除证书。不共享任何签名密钥。`install-sign.ps1 -TestMode` 可免管理员演练签名流程。安装包与 `scripts\deploy-uiaccess.ps1` 装到同一目录，后装的覆盖先装的；开发证书（Veil Dev Code Signing）与安装证书（Veil Local Signing）是两张，互不清理。**安装包本身未在真机上跑通过**（开发机没装 Inno Setup），首次发版要实测安装、启动、卸载。

@@ -5,6 +5,9 @@
 # rsrc_windows_amd64.syso for the duration of the build and restoring it afterwards.
 # (This file is ASCII on purpose: Windows PowerShell 5.1 misreads UTF-8 without BOM.)
 
+# -NoSign: build only (CI / installer input; the installer signs on the user's machine).
+param([switch]$NoSign)
+
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $out  = Join-Path $root 'build\uiaccess'
@@ -29,6 +32,11 @@ try {
     }
 } finally {
     Pop-Location
+}
+
+if ($NoSign) {
+    Write-Host "BUILD OK  $out\Veil.exe (unsigned)"
+    return
 }
 
 # Self-signed code signing cert, kept in the current user's store with a non-exportable key.

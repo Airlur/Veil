@@ -155,7 +155,7 @@ func createSettingsThread() {
 			Width:  uint(560 * scale),
 			Height: uint(470 * scale),
 			Center: true,
-			IconId: 1,
+			IconId: uint(appIconResID()),
 		},
 	})
 	if w == nil {
