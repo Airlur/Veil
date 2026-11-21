@@ -15,7 +15,7 @@ import (
 
 const (
 	appName    = "Veil"
-	appVersion = "1.1.0"
+	appVersion = "1.1.1"
 	mutexName  = `Global\VeilSingleInstance_7f3a`
 )
 
