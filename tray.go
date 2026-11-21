@@ -6,10 +6,10 @@ import (
 	"bytes"
 	_ "embed"
 	"fmt"
-	"os"
 	"image"
 	"image/draw"
 	"image/png"
+	"os"
 	"syscall"
 	"unsafe"
 
@@ -213,7 +213,6 @@ func showTrayMenu() {
 	}
 }
 
-
 // makeEyeIcon 从嵌入的 eye.png 构建 HBITMAP。
 // 图标文件是离线用 tools/genmenu 从用户提供的 SVG 栅格化的（32x32 白底），
 // 白底的原因：SetMenuItemInfo 的 hbmpItem 不支持 per-pixel alpha，
@@ -275,7 +274,6 @@ func makeEyeIcon() windows.Handle {
 	return windows.Handle(hbmp)
 }
 
-
 // openLogLocation 用资源管理器打开日志所在文件夹并选中文件：
 // 想看内容双击、想发给别人右键复制路径、想换编辑器也方便。
 func openLogLocation() {
@@ -296,4 +294,33 @@ func openLogLocation() {
 		uintptr(unsafe.Pointer(params)),
 		0, SW_SHOWNORMAL)
 	logf("INFO: 已打开日志位置 %s", path)
+}
+
+// openFolder 在资源管理器里打开目录（不存在则先创建）。
+func openFolder(path string) {
+	if err := os.MkdirAll(path, 0755); err != nil {
+		logf("WARNING: 创建目录失败 %s: %v", path, err)
+	}
+	shellExecuteOpen(path)
+	logf("INFO: 已打开文件夹 %s", path)
+}
+
+// openLogFile 用系统默认程序打开日志文件。
+func openLogFile() {
+	path := logFilePath()
+	if _, err := os.Stat(path); err != nil {
+		logf("INFO: 日志文件尚不存在，无法打开")
+		return
+	}
+	shellExecuteOpen(path)
+	logf("INFO: 已打开日志文件 %s", path)
+}
+
+func shellExecuteOpen(path string) {
+	verb, _ := syscall.UTF16PtrFromString("open")
+	file, _ := syscall.UTF16PtrFromString(path)
+	procShellExecuteW.Call(0,
+		uintptr(unsafe.Pointer(verb)),
+		uintptr(unsafe.Pointer(file)),
+		0, 0, SW_SHOWNORMAL)
 }

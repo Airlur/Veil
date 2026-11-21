@@ -154,3 +154,5 @@ go test ./...       # 回归测试（图标构建、热键解析）
 **安装包（`installer/`）**：Inno Setup 脚本 `veil.iss` + 安装时签名脚本 `install-sign.ps1`。CI 产出未签名的 UIAccess exe，安装时在用户机器上生成一次性自签名证书 → 签名 → 加入 LocalMachine\Root → 删除私钥；卸载时移除证书。不共享任何签名密钥。`install-sign.ps1 -TestMode` 可免管理员演练签名流程。开发部署脚本装到 `Program Files\Veil Dev`，安装包装到 `Program Files\Veil`，互不覆盖（共用 `%APPDATA%\Veil`，单实例互斥仍然生效）；开发证书（Veil Dev Code Signing）与安装证书（Veil Local Signing）是两张，互不清理。**安装包本身未在真机上跑通过**（开发机没装 Inno Setup），首次发版要实测安装、启动、卸载。
 
 **待排查**：首次开启遮罩后 UU 远控端光标消失约 10 秒（换屏保图不再触发，已实测）。下一步可试：开启前先让 UU 处于"文件加载"路径、或对比不同光标尺寸/DPI 下的等待时间。
+
+**设置面板分页（2026-11-21）**：ui/index.html 改为侧栏三页 + 关于（隐私屏保 / 快捷键 / 系统 / 关于）。切页纯前端 `showPage`，footer（确定并启用/预览）只在隐私屏保页显示；重开面板回到第一页。窗口标题 "Veil 隐幕"、宽 640 逻辑。系统页数据入口绑定：`goOpenDataFolder` / `goOpenPresetsFolder` / `goOpenLogLocation` / `goOpenLogFile`（`tray.go` 的 `openFolder` / `openLogFile`，目录不存在会先创建）。F13~F24 已从热键支持中移除（普通键盘没有这些键）。多屏不同图 + 轮播合并为后续「图库」大项（名称待定），需按物理屏而非 DISPLAY 编号绑定图。

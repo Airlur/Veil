@@ -17,83 +17,83 @@ var (
 )
 
 var (
-	procCreateWindowExW   = user32.NewProc("CreateWindowExW")
-	procRegisterClassExW  = user32.NewProc("RegisterClassExW")
-	procDefWindowProcW    = user32.NewProc("DefWindowProcW")
-	procDestroyWindow     = user32.NewProc("DestroyWindow")
-	procShowWindow        = user32.NewProc("ShowWindow")
-	procUpdateWindow      = user32.NewProc("UpdateWindow")
-	procSetWindowPos      = user32.NewProc("SetWindowPos")
-	procGetMessageW       = user32.NewProc("GetMessageW")
-	procTranslateMessage  = user32.NewProc("TranslateMessage")
-	procDispatchMessageW  = user32.NewProc("DispatchMessageW")
-	procPostQuitMessage   = user32.NewProc("PostQuitMessage")
-	procPostMessageW      = user32.NewProc("PostMessageW")
-	procSendMessageW      = user32.NewProc("SendMessageW")
-	procInvalidateRect    = user32.NewProc("InvalidateRect")
-	procGetClientRect     = user32.NewProc("GetClientRect")
-	procSetTimer          = user32.NewProc("SetTimer")
-	procKillTimer         = user32.NewProc("KillTimer")
-	procRegisterHotKey    = user32.NewProc("RegisterHotKey")
-	procUnregisterHotKey  = user32.NewProc("UnregisterHotKey")
-	procGetSystemMetrics  = user32.NewProc("GetSystemMetrics")
-	procLoadIconW         = user32.NewProc("LoadIconW")
-	procLoadCursorW       = user32.NewProc("LoadCursorW")
-	procCreatePopupMenu   = user32.NewProc("CreatePopupMenu")
-	procAppendMenuW       = user32.NewProc("AppendMenuW")
-	procTrackPopupMenu    = user32.NewProc("TrackPopupMenu")
-	procDestroyMenu       = user32.NewProc("DestroyMenu")
-	procSetForegroundWindow = user32.NewProc("SetForegroundWindow")
-	procGetCursorPos      = user32.NewProc("GetCursorPos")
-	procEnumDisplayMonitors = user32.NewProc("EnumDisplayMonitors")
-	procGetMonitorInfoW   = user32.NewProc("GetMonitorInfoW")
-	procGetDC             = user32.NewProc("GetDC")
-	procReleaseDC         = user32.NewProc("ReleaseDC")
-	procSetWindowDisplayAffinity = user32.NewProc("SetWindowDisplayAffinity")
+	procCreateWindowExW               = user32.NewProc("CreateWindowExW")
+	procRegisterClassExW              = user32.NewProc("RegisterClassExW")
+	procDefWindowProcW                = user32.NewProc("DefWindowProcW")
+	procDestroyWindow                 = user32.NewProc("DestroyWindow")
+	procShowWindow                    = user32.NewProc("ShowWindow")
+	procUpdateWindow                  = user32.NewProc("UpdateWindow")
+	procSetWindowPos                  = user32.NewProc("SetWindowPos")
+	procGetMessageW                   = user32.NewProc("GetMessageW")
+	procTranslateMessage              = user32.NewProc("TranslateMessage")
+	procDispatchMessageW              = user32.NewProc("DispatchMessageW")
+	procPostQuitMessage               = user32.NewProc("PostQuitMessage")
+	procPostMessageW                  = user32.NewProc("PostMessageW")
+	procSendMessageW                  = user32.NewProc("SendMessageW")
+	procInvalidateRect                = user32.NewProc("InvalidateRect")
+	procGetClientRect                 = user32.NewProc("GetClientRect")
+	procSetTimer                      = user32.NewProc("SetTimer")
+	procKillTimer                     = user32.NewProc("KillTimer")
+	procRegisterHotKey                = user32.NewProc("RegisterHotKey")
+	procUnregisterHotKey              = user32.NewProc("UnregisterHotKey")
+	procGetSystemMetrics              = user32.NewProc("GetSystemMetrics")
+	procLoadIconW                     = user32.NewProc("LoadIconW")
+	procLoadCursorW                   = user32.NewProc("LoadCursorW")
+	procCreatePopupMenu               = user32.NewProc("CreatePopupMenu")
+	procAppendMenuW                   = user32.NewProc("AppendMenuW")
+	procTrackPopupMenu                = user32.NewProc("TrackPopupMenu")
+	procDestroyMenu                   = user32.NewProc("DestroyMenu")
+	procSetForegroundWindow           = user32.NewProc("SetForegroundWindow")
+	procGetCursorPos                  = user32.NewProc("GetCursorPos")
+	procEnumDisplayMonitors           = user32.NewProc("EnumDisplayMonitors")
+	procGetMonitorInfoW               = user32.NewProc("GetMonitorInfoW")
+	procGetDC                         = user32.NewProc("GetDC")
+	procReleaseDC                     = user32.NewProc("ReleaseDC")
+	procSetWindowDisplayAffinity      = user32.NewProc("SetWindowDisplayAffinity")
 	procSetProcessDpiAwarenessContext = user32.NewProc("SetProcessDpiAwarenessContext")
-	procFillRect          = user32.NewProc("FillRect")
-	procMessageBeep       = user32.NewProc("MessageBeep")
-	procBeginPaint        = user32.NewProc("BeginPaint")
-	procEndPaint          = user32.NewProc("EndPaint")
-	procFindWindowW       = user32.NewProc("FindWindowW")
-	procLoadImageW        = user32.NewProc("LoadImageW")
-	procGetWindowRect     = user32.NewProc("GetWindowRect")
+	procFillRect                      = user32.NewProc("FillRect")
+	procMessageBeep                   = user32.NewProc("MessageBeep")
+	procBeginPaint                    = user32.NewProc("BeginPaint")
+	procEndPaint                      = user32.NewProc("EndPaint")
+	procFindWindowW                   = user32.NewProc("FindWindowW")
+	procLoadImageW                    = user32.NewProc("LoadImageW")
+	procGetWindowRect                 = user32.NewProc("GetWindowRect")
 )
 
 var (
-	procCallNextHookEx      = user32.NewProc("CallNextHookEx")
-	procUnhookWindowsHookEx = user32.NewProc("UnhookWindowsHookEx")
-	procPostThreadMessageW  = user32.NewProc("PostThreadMessageW")
-	procSetWindowRgn        = user32.NewProc("SetWindowRgn")
-	procCreateRoundRectRgn  = gdi32.NewProc("CreateRoundRectRgn")
-	procCreateFontW         = gdi32.NewProc("CreateFontW")
-	procSetBkMode           = gdi32.NewProc("SetBkMode")
-	procSetTextColor        = gdi32.NewProc("SetTextColor")
-	procDrawTextW           = user32.NewProc("DrawTextW")
-	procGetSystemMetrics2   = user32.NewProc("GetSystemMetrics")
-	procGetCurrentThreadId  = kernel32.NewProc("GetCurrentThreadId")
-	procLoadImageFromRes    = user32.NewProc("LoadImageW")
-	procGetStockObject      = gdi32.NewProc("GetStockObject")
-	procSetMenuItemInfoW    = user32.NewProc("SetMenuItemInfoW")
+	procCallNextHookEx             = user32.NewProc("CallNextHookEx")
+	procUnhookWindowsHookEx        = user32.NewProc("UnhookWindowsHookEx")
+	procPostThreadMessageW         = user32.NewProc("PostThreadMessageW")
+	procSetWindowRgn               = user32.NewProc("SetWindowRgn")
+	procCreateRoundRectRgn         = gdi32.NewProc("CreateRoundRectRgn")
+	procCreateFontW                = gdi32.NewProc("CreateFontW")
+	procSetBkMode                  = gdi32.NewProc("SetBkMode")
+	procSetTextColor               = gdi32.NewProc("SetTextColor")
+	procDrawTextW                  = user32.NewProc("DrawTextW")
+	procGetSystemMetrics2          = user32.NewProc("GetSystemMetrics")
+	procGetCurrentThreadId         = kernel32.NewProc("GetCurrentThreadId")
+	procLoadImageFromRes           = user32.NewProc("LoadImageW")
+	procGetStockObject             = gdi32.NewProc("GetStockObject")
+	procSetMenuItemInfoW           = user32.NewProc("SetMenuItemInfoW")
 	procSetLayeredWindowAttributes = user32.NewProc("SetLayeredWindowAttributes")
-	procGetDpiForSystem     = user32.NewProc("GetDpiForSystem")
-	procSetWindowLongPtrW2  = user32.NewProc("SetWindowLongPtrW")
-	procCallWindowProcW     = user32.NewProc("CallWindowProcW")
-	procSystemParametersInfoW = user32.NewProc("SystemParametersInfoW")
-	procGetSysColor         = user32.NewProc("GetSysColor")
-	procCreatePen           = gdi32.NewProc("CreatePen")
-	procRoundRect           = gdi32.NewProc("RoundRect")
-	procPolyline            = gdi32.NewProc("Polyline")
-	procSetPixel            = gdi32.NewProc("SetPixel")
+	procGetDpiForSystem            = user32.NewProc("GetDpiForSystem")
+	procSetWindowLongPtrW2         = user32.NewProc("SetWindowLongPtrW")
+	procCallWindowProcW            = user32.NewProc("CallWindowProcW")
+	procSystemParametersInfoW      = user32.NewProc("SystemParametersInfoW")
+	procGetSysColor                = user32.NewProc("GetSysColor")
+	procCreatePen                  = gdi32.NewProc("CreatePen")
+	procRoundRect                  = gdi32.NewProc("RoundRect")
+	procPolyline                   = gdi32.NewProc("Polyline")
+	procSetPixel                   = gdi32.NewProc("SetPixel")
 )
 
 var (
-	procSetSystemCursor     = user32.NewProc("SetSystemCursor")
-	procCreateCursor        = user32.NewProc("CreateCursor")
-	procDestroyCursor       = user32.NewProc("DestroyCursor")
-	procGetIconInfo         = user32.NewProc("GetIconInfo")
-	procDrawIconEx          = user32.NewProc("DrawIconEx")
-	procGetObjectW          = gdi32.NewProc("GetObjectW")
+	procSetSystemCursor             = user32.NewProc("SetSystemCursor")
+	procCreateCursor                = user32.NewProc("CreateCursor")
+	procDestroyCursor               = user32.NewProc("DestroyCursor")
+	procGetIconInfo                 = user32.NewProc("GetIconInfo")
+	procDrawIconEx                  = user32.NewProc("DrawIconEx")
+	procGetObjectW                  = gdi32.NewProc("GetObjectW")
 	procChangeWindowMessageFilterEx = user32.NewProc("ChangeWindowMessageFilterEx")
 )
 
@@ -115,6 +115,7 @@ var (
 
 var (
 	procShellNotifyIconW = shell32.NewProc("Shell_NotifyIconW")
+	procShellExecuteW    = shell32.NewProc("ShellExecuteW")
 	procCreateMutexW     = kernel32.NewProc("CreateMutexW")
 	procGetLastError     = kernel32.NewProc("GetLastError")
 )
@@ -122,11 +123,11 @@ var (
 // ---------- 常量 ----------
 
 const (
-	WS_POPUP       = 0x80000000
-	WS_VISIBLE     = 0x10000000
-	WS_EX_TOPMOST  = 0x00000008
-	WS_EX_TOOLWINDOW = 0x00000080
-	WS_EX_NOACTIVATE = 0x08000000
+	WS_POPUP          = 0x80000000
+	WS_VISIBLE        = 0x10000000
+	WS_EX_TOPMOST     = 0x00000008
+	WS_EX_TOOLWINDOW  = 0x00000080
+	WS_EX_NOACTIVATE  = 0x08000000
 	WS_EX_TRANSPARENT = 0x00000020
 	WS_EX_LAYERED     = 0x00080000
 
@@ -149,27 +150,27 @@ const (
 
 	// WDA_EXCLUDEFROMCAPTURE 让窗口在物理屏可见，但在所有系统采集路径（DXGI/WGC/BitBlt）里被剔除。
 	// 这是整个项目的核心。Windows 10 2004 (build 19041) 起才有。
-	WDA_NONE              = 0x00000000
-	WDA_MONITOR           = 0x00000001
+	WDA_NONE               = 0x00000000
+	WDA_MONITOR            = 0x00000001
 	WDA_EXCLUDEFROMCAPTURE = 0x00000011
 )
 
 const (
-	WM_DESTROY      = 0x0002
-	WM_CLOSE        = 0x0010
-	WM_PAINT        = 0x000F
-	WM_ERASEBKGND   = 0x0014
-	WM_NCHITTEST    = 0x0084
+	WM_DESTROY       = 0x0002
+	WM_CLOSE         = 0x0010
+	WM_PAINT         = 0x000F
+	WM_ERASEBKGND    = 0x0014
+	WM_NCHITTEST     = 0x0084
 	WM_MOUSEACTIVATE = 0x0021
-	WM_TIMER        = 0x0113
-	WM_HOTKEY       = 0x0312
-	WM_SYSCOMMAND   = 0x0112
+	WM_TIMER         = 0x0113
+	WM_HOTKEY        = 0x0312
+	WM_SYSCOMMAND    = 0x0112
 	WM_DISPLAYCHANGE = 0x007E
-	WM_APP          = 0x8000
-	WM_TRAYICON     = WM_APP + 1
+	WM_APP           = 0x8000
+	WM_TRAYICON      = WM_APP + 1
 
-	WM_RBUTTONUP = 0x0205
-	WM_LBUTTONUP = 0x0202
+	WM_RBUTTONUP   = 0x0205
+	WM_LBUTTONUP   = 0x0202
 	WM_CONTEXTMENU = 0x007B
 	NIN_SELECT     = 0x0400
 	WM_MOUSEMOVE   = 0x0200
@@ -223,9 +224,9 @@ const (
 )
 
 const (
-	SRCCOPY       = 0x00CC0020
+	SRCCOPY        = 0x00CC0020
 	DIB_RGB_COLORS = 0
-	BI_RGB        = 0
+	BI_RGB         = 0
 )
 
 const (
@@ -234,10 +235,10 @@ const (
 )
 
 const (
-	GWLP_WNDPROC = ^uintptr(3) // -4
-	SPI_GETWORKAREA = 0x0030
+	GWLP_WNDPROC                               = ^uintptr(3) // -4
+	SPI_GETWORKAREA                            = 0x0030
 	DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = ^uintptr(3) // -4
-	MONITORINFOF_PRIMARY = 0x00000001
+	MONITORINFOF_PRIMARY                       = 0x00000001
 )
 
 const (
@@ -263,11 +264,11 @@ const (
 
 // 菜单命令
 const (
-	CMD_ENABLE   = 1001
-	CMD_DISABLE  = 1002
-	CMD_SETTINGS = 1003
-	CMD_EXIT     = 1004
-	CMD_OPENLOG  = 1005
+	CMD_ENABLE     = 1001
+	CMD_DISABLE    = 1002
+	CMD_SETTINGS   = 1003
+	CMD_EXIT       = 1004
+	CMD_OPENLOG    = 1005
 	CMD_HOTKEYSOFF = 1006
 )
 
@@ -372,18 +373,18 @@ type BITMAP struct {
 // PAINTSTRUCT 与 Win32 结构布局一致。
 // MENUITEMINFOW 用于给菜单项挂自绘位图图标。
 type MENUITEMINFOW struct {
-	CbSize       uint32
-	FMask        uint32
-	FType        uint32
-	FState       uint32
-	WID          uint32
-	HSubMenu     windows.Handle
-	HbmpChecked  windows.Handle
+	CbSize        uint32
+	FMask         uint32
+	FType         uint32
+	FState        uint32
+	WID           uint32
+	HSubMenu      windows.Handle
+	HbmpChecked   windows.Handle
 	HbmpUnchecked windows.Handle
-	DwItemData   uintptr
-	DwTypeData   *uint16
-	Cch          uint32
-	HbmpItem     windows.Handle
+	DwItemData    uintptr
+	DwTypeData    *uint16
+	Cch           uint32
+	HbmpItem      windows.Handle
 }
 
 type PAINTSTRUCT struct {

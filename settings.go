@@ -64,6 +64,8 @@ type SettingsState struct {
 	CustomName         string   `json:"customName"`
 	AllMonitors        bool     `json:"allMonitors"`
 	AutoStart          bool     `json:"autoStart"`
+	DataDir            string   `json:"dataDir"`
+	LogPath            string   `json:"logPath"`
 	Version            string   `json:"version"`
 }
 
@@ -83,6 +85,8 @@ func buildState() SettingsState {
 		CustomName:         name,
 		AllMonitors:        c.AllMonitors,
 		AutoStart:          autoStartEnabled(),
+		DataDir:            dataDir(),
+		LogPath:            logFilePath(),
 		Version:            appVersion,
 	}
 }
@@ -153,8 +157,8 @@ func createSettingsThread() {
 		Debug:    false,
 		DataPath: dataPath,
 		WindowOptions: webview2.WindowOptions{
-			Title:  "Veil · 设置隐私屏保",
-			Width:  uint(560 * scale),
+			Title:  "Veil 隐幕",
+			Width:  uint(640 * scale),
 			Height: uint(470 * scale),
 			Center: true,
 			IconId: uint(appIconResID()),
@@ -283,6 +287,12 @@ func bindSettings(w webview2.WebView) {
 		logf("INFO: 开机自启 = %v", on)
 		return "{}"
 	})
+
+	// 数据与日志入口（系统页）
+	_ = w.Bind("goOpenPresetsFolder", func() string { openFolder(presetsDir()); return "{}" })
+	_ = w.Bind("goOpenDataFolder", func() string { openFolder(dataDir()); return "{}" })
+	_ = w.Bind("goOpenLogLocation", func() string { openLogLocation(); return "{}" })
+	_ = w.Bind("goOpenLogFile", func() string { openLogFile(); return "{}" })
 
 	_ = w.Bind("goPreview", func() string {
 		enablePreview()

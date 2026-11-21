@@ -24,9 +24,7 @@ func TestHotkeyRules(t *testing.T) {
 		{"Ctrl+Alt+Left", true},
 		{"Ctrl+Alt+Num5", true},
 		{"Ctrl+Alt+`", true},
-		{"Shift+F9", true}, // F1~F12 搭配 Shift 即可
-		{"F13", true},      // F13~F24 可单独使用
-		{"Ctrl+Alt+F24", true},
+		{"Shift+F9", true},        // F1~F12 搭配 Shift 即可
 		{"V", false},              // 会吞掉正常打字
 		{"Shift+A", false},        // 同上：打不出大写字母
 		{"Shift+Left", false},     // 会吞掉选中文本
@@ -95,7 +93,7 @@ func startHotkeyTestUI(t *testing.T) {
 }
 
 // 设置面板改热键的完整路径。测试 goroutine 扮演 WebView 线程（不是 UI 线程），
-// 调用的就是绑定给前端的那几个函数。会短暂注册真实的全局热键（Ctrl+Alt+Shift+F17~F24）。
+// 调用的就是绑定给前端的那几个函数。会短暂注册真实的全局热键（Ctrl+Alt+Shift+1~6）。
 func TestHotkeyFromPanelThread(t *testing.T) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
@@ -105,11 +103,11 @@ func TestHotkeyFromPanelThread(t *testing.T) {
 	}
 
 	const cas = MOD_CONTROL | MOD_ALT | MOD_SHIFT
-	f := func(n uint32) uint32 { return 0x70 + n - 1 }
+	f := func(n uint32) uint32 { return 0x60 + n } // Ctrl+Alt+Shift+Num1~6：小键盘数字几乎不会有程序占用
 	cfg = defaultConfig()
-	cfg.HotkeyToggle = formatHotkey(cas, f(22))
-	cfg.HotkeySettings = formatHotkey(cas, f(23))
-	cfg.HotkeyQuit = formatHotkey(cas, f(24))
+	cfg.HotkeyToggle = formatHotkey(cas, f(2))
+	cfg.HotkeySettings = formatHotkey(cas, f(3))
+	cfg.HotkeyQuit = formatHotkey(cas, f(4))
 	cfgPath = filepath.Join(t.TempDir(), "config.json")
 
 	// probe 在 UI 线程试注册一个组合：返回它当前是否空闲
@@ -148,7 +146,7 @@ func TestHotkeyFromPanelThread(t *testing.T) {
 		return r
 	}
 
-	for n := uint32(17); n <= 24; n++ {
+	for n := uint32(1); n <= 6; n++ {
 		if !probe(cas, f(n)) {
 			t.Skipf("本机 %s 不可用（被占用或环境不支持注册热键），跳过", formatHotkey(cas, f(n)))
 		}
@@ -160,33 +158,33 @@ func TestHotkeyFromPanelThread(t *testing.T) {
 	}
 
 	// 1. 从面板线程改热键必须成功（修复前：任何组合都报"已被其他程序占用"）
-	r := result(setHotkeyFromPanel("toggle", cas, int(f(21))))
-	if r.Error != "" || r.OK != formatHotkey(cas, f(21)) {
+	r := result(setHotkeyFromPanel("toggle", cas, int(f(6))))
+	if r.Error != "" || r.OK != formatHotkey(cas, f(6)) {
 		t.Fatalf("从面板线程修改失败: %+v", r)
 	}
-	if probe(cas, f(21)) {
+	if probe(cas, f(6)) {
 		t.Error("新组合没有真的注册上")
 	}
-	if !probe(cas, f(22)) {
+	if !probe(cas, f(2)) {
 		t.Error("旧组合没有注销")
 	}
-	if got := getConfig().HotkeyToggle; got != formatHotkey(cas, f(21)) {
+	if got := getConfig().HotkeyToggle; got != formatHotkey(cas, f(6)) {
 		t.Errorf("配置未更新: %q", got)
 	}
-	if data, _ := os.ReadFile(cfgPath); !strings.Contains(string(data), "F21") {
+	if data, _ := os.ReadFile(cfgPath); !strings.Contains(string(data), "Num6") {
 		t.Errorf("配置文件未写入新组合: %s", data)
 	}
 
 	// 2. 真的被占用：报占用、原热键保留、给出的建议确实空闲
-	runOnUI(func() string { registerOne(77, cas, f(20)); return "" }) // 扮演"别的程序"
-	r = result(setHotkeyFromPanel("settings", cas, int(f(20))))
+	runOnUI(func() string { registerOne(77, cas, f(5)); return "" }) // 扮演"别的程序"
+	r = result(setHotkeyFromPanel("settings", cas, int(f(5))))
 	if r.Error == "" || !r.Occupied {
 		t.Fatalf("应报告被占用: %+v", r)
 	}
-	if probe(cas, f(23)) {
+	if probe(cas, f(3)) {
 		t.Error("修改失败后原热键丢了（必须回滚）")
 	}
-	if !status()["settings"].Active || getConfig().HotkeySettings != formatHotkey(cas, f(23)) {
+	if !status()["settings"].Active || getConfig().HotkeySettings != formatHotkey(cas, f(3)) {
 		t.Error("修改失败后状态 / 配置不应变化")
 	}
 	if len(r.Suggest) == 0 {
@@ -203,7 +201,7 @@ func TestHotkeyFromPanelThread(t *testing.T) {
 	t.Logf("被占用时给出的建议: %+v", r.Suggest)
 
 	// 3. 与另一组热键相同：明确指出是哪一组，而不是说"被其他程序占用"
-	r = result(setHotkeyFromPanel("settings", cas, int(f(21))))
+	r = result(setHotkeyFromPanel("settings", cas, int(f(6))))
 	if !strings.Contains(r.Error, "开关防窥") {
 		t.Errorf("与开关热键相同时的提示不对: %+v", r)
 	}
@@ -222,18 +220,18 @@ func TestHotkeyFromPanelThread(t *testing.T) {
 	if r.Error != "" {
 		t.Fatalf("禁用失败: %+v", r)
 	}
-	if !probe(cas, f(21)) {
+	if !probe(cas, f(6)) {
 		t.Error("禁用后组合仍被注册")
 	}
-	if s := status()["toggle"]; !s.Disabled || s.Active || s.Combo != formatHotkey(cas, f(21)) || !getConfig().HotkeyToggleOff {
+	if s := status()["toggle"]; !s.Disabled || s.Active || s.Combo != formatHotkey(cas, f(6)) || !getConfig().HotkeyToggleOff {
 		t.Errorf("禁用后状态不对: %+v", s)
 	}
 	runOnUI(func() string { buildHotkeys(); return "" })
-	if s := status()["toggle"]; !s.Disabled || s.Active || !probe(cas, f(21)) {
+	if s := status()["toggle"]; !s.Disabled || s.Active || !probe(cas, f(6)) {
 		t.Errorf("重新注册后禁用状态丢失: %+v", s)
 	}
 	r = result(setHotkeyOffFromPanel("toggle", false))
-	if r.Error != "" || probe(cas, f(21)) || !status()["toggle"].Active {
+	if r.Error != "" || probe(cas, f(6)) || !status()["toggle"].Active {
 		t.Errorf("启用后应恢复原组合并生效: %+v %+v", r, status()["toggle"])
 	}
 
@@ -243,7 +241,7 @@ func TestHotkeyFromPanelThread(t *testing.T) {
 	if !allHotkeysOff() || !st["toggle"].Disabled || !st["settings"].Disabled || !st["quit"].Disabled {
 		t.Errorf("一键禁用后状态不对: %+v", st)
 	}
-	if !probe(cas, f(21)) || !probe(cas, f(23)) || !probe(cas, f(24)) {
+	if !probe(cas, f(6)) || !probe(cas, f(3)) || !probe(cas, f(4)) {
 		t.Error("一键禁用后仍有热键被注册")
 	}
 	runOnUI(func() string { applySetAllHotkeysOff(false); return "" })
@@ -254,7 +252,7 @@ func TestHotkeyFromPanelThread(t *testing.T) {
 
 	// 给已禁用的热键录制新组合 = 同时启用
 	result(setHotkeyOffFromPanel("toggle", true))
-	r = result(setHotkeyFromPanel("toggle", cas, int(f(19))))
+	r = result(setHotkeyFromPanel("toggle", cas, int(f(1))))
 	if r.Error != "" || !status()["toggle"].Active || status()["toggle"].Disabled {
 		t.Errorf("禁用后重新设置失败: %+v %+v", r, status()["toggle"])
 	}
@@ -272,7 +270,7 @@ func TestHotkeyFromPanelThread(t *testing.T) {
 	if r.Error != "" || !status()["quit"].Active {
 		t.Errorf("退出热键设为兜底组合应成功且生效: %+v %+v", r, status()["quit"])
 	}
-	if !probe(cas, f(24)) {
+	if !probe(cas, f(4)) {
 		t.Error("退出热键的旧组合没有注销")
 	}
 }

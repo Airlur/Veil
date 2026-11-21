@@ -128,7 +128,7 @@ func init() {
 		add(string(rune(c)), c)
 		add(fmt.Sprintf("Num%c", rune(c)), 0x60+c-'0') // 小键盘数字
 	}
-	for n := uint32(1); n <= 24; n++ {
+	for n := uint32(1); n <= 12; n++ {
 		add(fmt.Sprintf("F%d", n), 0x70+n-1)
 	}
 	for name, vk := range map[string]uint32{
@@ -151,7 +151,6 @@ var reservedHotkeys = map[[2]uint32]bool{
 }
 
 // validateHotkey 检查组合是否允许作为全局热键。规则只拦"会破坏正常使用"的组合：
-//   - F13~F24：任意，可单独使用
 //   - F1~F12：至少一个修饰键（Shift 也行）
 //   - 其余按键（字母、数字、标点、方向键等）：必须含 Ctrl、Alt 或 Win，
 //     否则打字、选中文本时就会被全局热键吞掉
@@ -160,7 +159,6 @@ func validateHotkey(mods, vk uint32) error {
 		return fmt.Errorf("不支持这个按键")
 	}
 	switch {
-	case vk >= 0x7C && vk <= 0x87: // F13~F24
 	case vk >= 0x70 && vk <= 0x7B: // F1~F12
 		if mods == 0 {
 			return fmt.Errorf("F1~F12 需要搭配至少一个修饰键（Ctrl / Alt / Shift / Win）")

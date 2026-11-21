@@ -30,14 +30,37 @@
     -webkit-user-select:none;
     user-select:none;
     display:flex;
-    flex-direction:column;
     height:100vh;
   }
+
+  /* ---------- 侧边导航 ---------- */
+  .sidebar{
+    width:150px;flex-shrink:0;
+    background:var(--soft);
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;
+    padding:16px 10px 14px;
+  }
+  .brand{display:flex;align-items:center;gap:9px;padding:0 8px 18px;font-weight:600;font-size:14.5px;}
+  .brand svg,.brand-mark{display:block;flex-shrink:0;}
+  .nav{display:flex;flex-direction:column;gap:2px;}
+  .nav-item{
+    display:block;width:100%;text-align:left;
+    padding:8px 12px;border:none;background:none;border-radius:8px;
+    font-family:inherit;font-size:13.5px;color:var(--sub);cursor:pointer;
+  }
+  .nav-item:hover{background:#ececf1;color:var(--text);}
+  .nav-item.active{background:#e3eaff;color:var(--accent);font-weight:500;}
+  .nav-about{margin-top:auto;}
+  .main{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .mini-link{background:none;border:none;padding:0;font-family:inherit;font-size:12px;color:var(--accent);cursor:pointer;}
+  .mini-link:hover{text-decoration:underline;}
+  .about-brand{display:flex;align-items:center;gap:12px;}
 
   /* 内容与 footer 都在滚动容器内，宽度天然一致：
      滚动条占位时卡片与按钮同步收窄，拉伸窗口也对齐 */
   .scroll{
-    height:100vh;
+    flex:1;min-height:0;
     overflow-y:auto;
   }
   .inner{
@@ -211,30 +234,21 @@
   }
   .hk-note b{color:var(--sub);font-weight:500;}
 
-  /* ---------- 底部（sticky：钉在可视区底部，宽度随卡片同步） ---------- */
   footer{
-    position:sticky;
-    bottom:0;
-    z-index:10;             /* 必须高于卡片内徽章，滚动时才能正确遮住卡片底部 */
-    flex:0 0 auto;
     display:flex;gap:12px;
-    padding:10px 0 12px;
-    margin-top:14px;
-    background:var(--bg);
+    padding:14px 24px;
     border-top:1px solid var(--line);
+    background:var(--bg);
   }
+  footer[hidden]{display:none;}
   .btn{
-    height:36px;
-    border-radius:8px;
-    font-family:inherit;font-size:13.5px;
-    cursor:pointer;
-    border:1px solid transparent;
+    flex:1;height:36px;border-radius:8px;border:1px solid transparent;
+    font-family:inherit;font-size:13.5px;cursor:pointer;
     transition:background .15s,border-color .15s;
   }
-  .btn.pri{background:var(--accent);color:#fff;flex:1;}
+  .btn.pri{background:var(--accent);color:#fff;}
   .btn.pri:hover{background:var(--accent-hover);}
-  .btn.pri:disabled{background:#c3cde3;color:#fff;cursor:not-allowed;}
-  .btn.ghost{background:#fff;color:var(--text);border-color:#dcdce3;flex:1;}
+  .btn.ghost{background:#fff;color:var(--text);border-color:#dcdce3;}
   .btn.ghost:hover{background:#f7f7fa;border-color:#c9c9d2;}
 
   .toast{
@@ -252,8 +266,23 @@
 </head>
 <body>
 
+<div class="sidebar">
+  <div class="brand">
+    <svg viewBox="0 0 32 32" width="26" height="26"><rect width="32" height="32" rx="7" fill="#16161a"/><text x="16" y="22.5" font-family="Segoe UI,Arial" font-size="17" font-weight="600" fill="#fff" text-anchor="middle">V</text></svg>
+    <span>Veil 隐幕</span>
+  </div>
+  <nav class="nav">
+    <button class="nav-item active" data-page="screensaver">隐私屏保</button>
+    <button class="nav-item" data-page="hotkeys">快捷键</button>
+    <button class="nav-item" data-page="system">系统</button>
+  </nav>
+  <button class="nav-item nav-about" data-page="about">关于</button>
+</div>
+
+<div class="main">
 <div class="scroll">
 <div class="inner">
+  <div class="page" data-page="screensaver">
   <div class="sec">自定义</div>
   <div class="grid">
     <div class="custom" id="customBox" onclick="pickImage()">
@@ -264,10 +293,10 @@
     </div>
   </div>
 
-  <div class="sec mt">预设</div>
+  <div class="sec mt">预设 <button class="mini-link" onclick="openPath('goOpenPresetsFolder')">打开预设文件夹</button></div>
   <div class="grid" id="grid"></div>
 
-  <div class="sec mt">显示与启动</div>
+  <div class="sec mt">遮蔽范围</div>
   <div class="hk-card">
     <div class="hk-row">
       <span class="hk-label">遮蔽范围</span>
@@ -277,16 +306,13 @@
       </div>
       <span class="hk-desc">多显示器时只遮住主屏</span>
     </div>
-    <div class="hk-item">
-      <div class="hk-row">
-        <span class="hk-label">开机自启</span>
-        <span class="hk-desc">登录 Windows 后自动运行 Veil（不会自动开启遮罩）</span>
-        <label class="switch" title="开机自启"><input type="checkbox" id="autoStartSwitch"><span></span></label>
-      </div>
-    </div>
   </div>
 
-  <div class="sec mt">快捷键</div>
+  <div class="spacer"></div>
+  </div>
+
+  <div class="page" data-page="hotkeys" hidden>
+  <div class="sec">快捷键</div>
   <div class="hk-card">
     <div class="hk-item">
       <div class="hk-row">
@@ -318,7 +344,7 @@
     <div class="hk-note">
       <ul class="hk-rules">
         <li>点击热键框后按下新的组合键，按 Esc 取消</li>
-        <li>字母、数字、标点、方向键需搭配 Ctrl、Alt 或 Win；F1~F12 搭配任意修饰键即可（Shift 也行）；F13~F24 可单独使用</li>
+        <li>字母、数字、标点、方向键需搭配 Ctrl、Alt 或 Win；F1~F12 搭配任意修饰键即可（Shift 也行）</li>
         <li>按下后没有反应，通常说明该组合已被其他程序占用；用键盘钩子实现快捷键的程序（如微信的截图键）检测不出来，会两边同时响应</li>
         <li>不需要的快捷键可单独关闭，也可在托盘菜单一键全部关闭</li>
         <li>固定兜底键 <b>Ctrl+Alt+Shift+Q</b> 始终可以强制退出，不可关闭</li>
@@ -328,12 +354,58 @@
   </div>
 
   <div class="spacer"></div>
+  </div>
 
-  <footer>
-    <button class="btn pri" id="btnApply" onclick="applyEnable()">确定并启用隐私屏保</button>
-    <button class="btn ghost" onclick="preview()">预览</button>
-  </footer>
+  <div class="page" data-page="system" hidden>
+    <div class="sec">开机自启</div>
+    <div class="hk-card">
+      <div class="hk-row">
+        <span class="hk-label">开机自启</span>
+        <span class="hk-desc">登录 Windows 后自动运行 Veil（不会自动开启遮罩）</span>
+        <label class="switch" title="开机自启"><input type="checkbox" id="autoStartSwitch"><span></span></label>
+      </div>
+    </div>
+
+    <div class="sec mt">数据管理</div>
+    <div class="hk-card">
+      <div class="hk-row">
+        <span class="hk-label">数据目录</span>
+        <span class="hk-desc" id="dataDirText" style="user-select:text;"></span>
+      </div>
+      <div class="hk-row">
+        <span class="hk-label">日志</span>
+        <span class="hk-desc" id="logPathText" style="user-select:text;"></span>
+      </div>
+      <div class="hk-row">
+        <span class="hk-label"></span>
+        <button class="seg-btn" onclick="openPath('goOpenDataFolder')">打开数据文件夹</button>
+        <button class="seg-btn" onclick="openPath('goOpenLogLocation')">定位日志文件</button>
+        <button class="seg-btn" onclick="openPath('goOpenLogFile')">打开日志文件</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" data-page="about" hidden>
+    <div class="about-brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" width="40" height="40"><rect width="32" height="32" rx="7" fill="#16161a"/><text x="16" y="22.5" font-family="Segoe UI,Arial" font-size="17" font-weight="600" fill="#fff" text-anchor="middle">V</text></svg>
+      <div>
+        <div style="font-weight:600;">Veil 隐幕</div>
+        <div id="aboutVersion" style="color:var(--muted);font-size:12.5px;"></div>
+      </div>
+    </div>
+    <p style="margin-top:14px;color:var(--sub);font-size:13px;line-height:1.8;">
+      Windows 被控端的防窥隐私屏保：本机屏幕被完全遮住，远控软件看到的仍是真实桌面。<br>
+      项目地址：<a href="https://github.com/Airlur/Veil" target="_blank" style="color:var(--accent);">github.com/Airlur/Veil</a>
+    </p>
+    <div class="spacer"></div>
+  </div>
 </div>
+</div>
+
+<footer id="pageFooter">
+  <button class="btn pri" id="btnApply" onclick="applyEnable()">确定并启用隐私屏保</button>
+  <button class="btn ghost" onclick="preview()">预览</button>
+</footer>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -352,6 +424,7 @@ function tip(msg, ms){
 async function boot(){
   try{ S = JSON.parse(await window.goState()); }
   catch(e){ S = {presets:[],presetId:'black',customImage:'',allMonitors:true}; }
+  showPage('screensaver'); // 每次打开面板回到第一页
   render();
   loadHotkeys(true);
 }
@@ -402,6 +475,9 @@ function render(){
     b.classList.toggle('active', (b.dataset.v==='1') === !!S.allMonitors);
   });
   document.getElementById('autoStartSwitch').checked = !!S.autoStart;
+  document.getElementById('dataDirText').textContent = S.dataDir||'';
+  document.getElementById('logPathText').textContent = S.logPath||'';
+  document.getElementById('aboutVersion').textContent = '版本 ' + (S.version||'');
 
   updateApplyButton();
 }
@@ -634,6 +710,18 @@ document.getElementById('autoStartSwitch').addEventListener('change', async e=>{
   if(r.error){ e.target.checked = !on; tip(r.error, 3800); return; }
   tip(on ? '已开启开机自启' : '已关闭开机自启');
 });
+
+/* ---------- 导航切页 ---------- */
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.hidden = p.dataset.page!==name);
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active', b.dataset.page===name));
+  document.getElementById('pageFooter').hidden = name!=='screensaver';
+}
+document.querySelectorAll('.nav-item').forEach(b=>b.onclick=()=>showPage(b.dataset.page));
+
+async function openPath(fn){
+  try{ await window[fn](); }catch(e){ tip('打开失败', 2500); }
+}
 
 window.addEventListener('DOMContentLoaded', boot);
 window.addEventListener('contextmenu', e=>e.preventDefault());
