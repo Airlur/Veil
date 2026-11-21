@@ -55,15 +55,16 @@ func settingsSubclassedProc(hwnd, msg, wParam, lParam uintptr) uintptr {
 
 // SettingsState 是传给前端的完整状态。
 type SettingsState struct {
-	Presets     []Preset `json:"presets"`
-	PresetID    string   `json:"presetId"`
-	AppliedPresetID    string `json:"appliedPresetId"`
-	AppliedCustomImage string `json:"appliedCustomImage"`
-	OverlayOn          bool   `json:"overlayOn"`
-	CustomImage string   `json:"customImage"`
-	CustomName  string   `json:"customName"`
-	AllMonitors bool     `json:"allMonitors"`
-	Version     string   `json:"version"`
+	Presets            []Preset `json:"presets"`
+	PresetID           string   `json:"presetId"`
+	AppliedPresetID    string   `json:"appliedPresetId"`
+	AppliedCustomImage string   `json:"appliedCustomImage"`
+	OverlayOn          bool     `json:"overlayOn"`
+	CustomImage        string   `json:"customImage"`
+	CustomName         string   `json:"customName"`
+	AllMonitors        bool     `json:"allMonitors"`
+	AutoStart          bool     `json:"autoStart"`
+	Version            string   `json:"version"`
 }
 
 func buildState() SettingsState {
@@ -79,9 +80,10 @@ func buildState() SettingsState {
 		AppliedCustomImage: c.AppliedCustomImage,
 		OverlayOn:          overlayOn,
 		CustomImage:        c.CustomImage,
-		CustomName:  name,
-		AllMonitors: c.AllMonitors,
-		Version:     appVersion,
+		CustomName:         name,
+		AllMonitors:        c.AllMonitors,
+		AutoStart:          autoStartEnabled(),
+		Version:            appVersion,
 	}
 }
 
@@ -233,10 +235,10 @@ func bindSettings(w webview2.WebView) {
 		})
 		dw, dh := imageDims(p)
 		b, _ := json.Marshal(map[string]interface{}{
-			"path":  p,
-			"name":  filepath.Base(p),
-			"dims":  fmt.Sprintf("%d×%d", dw, dh),
-			"low":   dw < recWidth || dh < recHeight,
+			"path": p,
+			"name": filepath.Base(p),
+			"dims": fmt.Sprintf("%d×%d", dw, dh),
+			"low":  dw < recWidth || dh < recHeight,
 		})
 		return string(b)
 	})
@@ -260,7 +262,26 @@ func bindSettings(w webview2.WebView) {
 		updateConfig(func(c *Config) {
 			c.AllMonitors = v
 		})
-		return "ok"
+		// 遮罩开着时立刻重建，让"仅主屏"即时生效（rebuildOverlay 只能进 UI 线程）
+		r, ok := runOnUI(func() string {
+			if overlayOn {
+				rebuildOverlay()
+			}
+			return "{}"
+		})
+		if !ok {
+			return jsonError("程序主线程没有响应，请稍后再试")
+		}
+		return r
+	})
+
+	_ = w.Bind("goSetAutoStart", func(on bool) string {
+		if err := setAutoStart(on); err != nil {
+			logf("WARNING: 开机自启设置失败: %v", err)
+			return jsonError("写入注册表失败：" + err.Error())
+		}
+		logf("INFO: 开机自启 = %v", on)
+		return "{}"
 	})
 
 	_ = w.Bind("goPreview", func() string {
@@ -426,7 +447,6 @@ func showOpenImageDialog() string {
 	}
 	return syscall.UTF16ToString(buf)
 }
-
 
 // user32SetForeground 把窗口带到前台（显示面板时必须，否则只在后台）。
 func user32SetForeground(hwnd unsafe.Pointer) {
