@@ -60,7 +60,12 @@
     font-family:inherit;font-size:13px;color:var(--text);cursor:pointer;
   }
   .card-btn:hover{border-color:var(--accent);color:var(--accent);}
-  .about-brand{display:flex;align-items:center;gap:12px;}
+  .about{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:36px;}
+  .about-name{font-size:19px;font-weight:600;margin-top:14px;}
+  .about-ver{color:var(--muted);font-size:12.5px;margin-top:4px;}
+  .about-desc{color:var(--sub);font-size:13px;line-height:1.8;margin-top:16px;max-width:430px;}
+  .about-actions{display:flex;gap:10px;margin-top:20px;}
+  .about-actions .card-btn{padding:0 18px;height:34px;}
 
   /* 内容与 footer 都在滚动容器内，宽度天然一致：
      滚动条占位时卡片与按钮同步收窄，拉伸窗口也对齐 */
@@ -257,7 +262,7 @@
   .btn.ghost:hover{background:#f7f7fa;border-color:#c9c9d2;}
 
   .toast{
-    position:fixed;left:50%;bottom:86px;
+    position:fixed;left:50%;top:16px;z-index:60;
     transform:translate(-50%,10px);
     background:rgba(28,28,32,.94);
     color:#fff;font-size:12.5px;
@@ -372,31 +377,26 @@
       <div class="hk-row">
         <span class="hk-label">数据目录</span>
         <span class="hk-desc" id="dataDirText" style="user-select:text;"></span>
+        <button class="card-btn" style="margin-left:auto;" onclick="openPath('goOpenDataFolder')">打开文件夹</button>
       </div>
       <div class="hk-row">
         <span class="hk-label">日志</span>
         <span class="hk-desc" id="logPathText" style="user-select:text;"></span>
       </div>
-      <div class="hk-row">
-        <span class="hk-label"></span>
-        <button class="card-btn" onclick="openPath('goOpenDataFolder')">打开文件夹</button>
-      </div>
     </div>
   </div>
 
   <div class="page" data-page="about" hidden>
-    <div class="about-brand">
-      <svg class="brand-mark" viewBox="0 0 32 32" width="40" height="40"><rect width="32" height="32" rx="7" fill="#16161a"/><text x="16" y="22.5" font-family="Segoe UI,Arial" font-size="17" font-weight="600" fill="#fff" text-anchor="middle">V</text></svg>
-      <div>
-        <div style="font-weight:600;">Veil 隐幕</div>
-        <div id="aboutVersion" style="color:var(--muted);font-size:12.5px;"></div>
+    <div class="about">
+      <svg class="brand-mark" viewBox="0 0 32 32" width="64" height="64"><rect width="32" height="32" rx="7" fill="#16161a"/><text x="16" y="22.5" font-family="Segoe UI,Arial" font-size="17" font-weight="600" fill="#fff" text-anchor="middle">V</text></svg>
+      <div class="about-name">Veil 隐幕</div>
+      <div class="about-ver" id="aboutVersion"></div>
+      <p class="about-desc">Windows 被控端的防窥隐私屏保：本机屏幕被完全遮住，远控软件看到的仍是真实桌面。</p>
+      <div class="about-actions">
+        <button class="card-btn" onclick="openPath('goOpenGitHub')">GitHub</button>
+        <button class="card-btn" onclick="openPath('goOpenPresetsFolder')">打开预设文件夹</button>
       </div>
     </div>
-    <p style="margin-top:14px;color:var(--sub);font-size:13px;line-height:1.8;">
-      Windows 被控端的防窥隐私屏保：本机屏幕被完全遮住，远控软件看到的仍是真实桌面。<br>
-      项目地址：<a href="https://github.com/Airlur/Veil" target="_blank" style="color:var(--accent);">github.com/Airlur/Veil</a>
-    </p>
-    <div class="spacer"></div>
   </div>
 </div>
 </div>

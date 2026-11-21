@@ -290,6 +290,10 @@ func bindSettings(w webview2.WebView) {
 
 	// 数据与日志入口（系统页）
 	_ = w.Bind("goOpenPresetsFolder", func() string { openFolder(presetsDir()); return "{}" })
+	_ = w.Bind("goOpenGitHub", func() string {
+		shellExecuteOpen("https://github.com/Airlur/Veil")
+		return "{}"
+	})
 	_ = w.Bind("goOpenDataFolder", func() string { openFolder(dataDir()); return "{}" })
 
 	_ = w.Bind("goPreview", func() string {
