@@ -158,7 +158,7 @@ func createSettingsThread() {
 		DataPath: dataPath,
 		WindowOptions: webview2.WindowOptions{
 			Title:  "Veil 隐幕",
-			Width:  uint(640 * scale),
+			Width:  uint(720 * scale),
 			Height: uint(470 * scale),
 			Center: true,
 			IconId: uint(appIconResID()),
@@ -291,8 +291,6 @@ func bindSettings(w webview2.WebView) {
 	// 数据与日志入口（系统页）
 	_ = w.Bind("goOpenPresetsFolder", func() string { openFolder(presetsDir()); return "{}" })
 	_ = w.Bind("goOpenDataFolder", func() string { openFolder(dataDir()); return "{}" })
-	_ = w.Bind("goOpenLogLocation", func() string { openLogLocation(); return "{}" })
-	_ = w.Bind("goOpenLogFile", func() string { openLogFile(); return "{}" })
 
 	_ = w.Bind("goPreview", func() string {
 		enablePreview()

@@ -41,8 +41,7 @@
     display:flex;flex-direction:column;
     padding:16px 10px 14px;
   }
-  .brand{display:flex;align-items:center;gap:9px;padding:0 8px 18px;font-weight:600;font-size:14.5px;}
-  .brand svg,.brand-mark{display:block;flex-shrink:0;}
+  .brand-mark{display:block;flex-shrink:0;}
   .nav{display:flex;flex-direction:column;gap:2px;}
   .nav-item{
     display:block;width:100%;text-align:left;
@@ -51,10 +50,16 @@
   }
   .nav-item:hover{background:#ececf1;color:var(--text);}
   .nav-item.active{background:#e3eaff;color:var(--accent);font-weight:500;}
-  .nav-about{margin-top:auto;}
   .main{flex:1;min-width:0;display:flex;flex-direction:column;}
   .mini-link{background:none;border:none;padding:0;font-family:inherit;font-size:12px;color:var(--accent);cursor:pointer;}
   .mini-link:hover{text-decoration:underline;}
+  .sec-head{display:flex;align-items:center;}
+  .sec-head .mini-link{margin-left:auto;}
+  .card-btn{
+    height:30px;padding:0 14px;background:#fff;border:1px solid #d0d0d8;border-radius:6px;
+    font-family:inherit;font-size:13px;color:var(--text);cursor:pointer;
+  }
+  .card-btn:hover{border-color:var(--accent);color:var(--accent);}
   .about-brand{display:flex;align-items:center;gap:12px;}
 
   /* 内容与 footer 都在滚动容器内，宽度天然一致：
@@ -267,10 +272,6 @@
 <body>
 
 <div class="sidebar">
-  <div class="brand">
-    <svg viewBox="0 0 32 32" width="26" height="26"><rect width="32" height="32" rx="7" fill="#16161a"/><text x="16" y="22.5" font-family="Segoe UI,Arial" font-size="17" font-weight="600" fill="#fff" text-anchor="middle">V</text></svg>
-    <span>Veil 隐幕</span>
-  </div>
   <nav class="nav">
     <button class="nav-item active" data-page="screensaver">隐私屏保</button>
     <button class="nav-item" data-page="hotkeys">快捷键</button>
@@ -293,7 +294,7 @@
     </div>
   </div>
 
-  <div class="sec mt">预设 <button class="mini-link" onclick="openPath('goOpenPresetsFolder')">打开预设文件夹</button></div>
+  <div class="sec mt sec-head"><span>预设</span><button class="mini-link" onclick="openPath('goOpenPresetsFolder')">打开预设文件夹</button></div>
   <div class="grid" id="grid"></div>
 
   <div class="sec mt">遮蔽范围</div>
@@ -378,9 +379,7 @@
       </div>
       <div class="hk-row">
         <span class="hk-label"></span>
-        <button class="seg-btn" onclick="openPath('goOpenDataFolder')">打开数据文件夹</button>
-        <button class="seg-btn" onclick="openPath('goOpenLogLocation')">定位日志文件</button>
-        <button class="seg-btn" onclick="openPath('goOpenLogFile')">打开日志文件</button>
+        <button class="card-btn" onclick="openPath('goOpenDataFolder')">打开文件夹</button>
       </div>
     </div>
   </div>

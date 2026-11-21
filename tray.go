@@ -305,17 +305,6 @@ func openFolder(path string) {
 	logf("INFO: 已打开文件夹 %s", path)
 }
 
-// openLogFile 用系统默认程序打开日志文件。
-func openLogFile() {
-	path := logFilePath()
-	if _, err := os.Stat(path); err != nil {
-		logf("INFO: 日志文件尚不存在，无法打开")
-		return
-	}
-	shellExecuteOpen(path)
-	logf("INFO: 已打开日志文件 %s", path)
-}
-
 func shellExecuteOpen(path string) {
 	verb, _ := syscall.UTF16PtrFromString("open")
 	file, _ := syscall.UTF16PtrFromString(path)
