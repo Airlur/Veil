@@ -166,6 +166,7 @@
   .hk-key.inactive{border-color:#e5484d;background:#fff6f6;color:#c62828;}
   /* 用户主动禁用的热键：灰色，不是错误 */
   .hk-key.off{color:var(--muted);background:var(--soft);border-style:dashed;}
+<<<<<<< HEAD
   /* 每组热键的启用开关 */
   .hk-switch{margin-left:auto;flex-shrink:0;position:relative;width:34px;height:20px;cursor:pointer;}
   .hk-switch input{position:absolute;opacity:0;width:0;height:0;}
@@ -176,6 +177,36 @@
   }
   .hk-switch input:checked + span{background:var(--accent);}
   .hk-switch input:checked + span::after{transform:translateX(14px);}
+=======
+  /* 禁用 / 启用开关：on = 启用 */
+  .switch{
+    margin-left:auto;flex-shrink:0;position:relative;width:34px;height:20px;cursor:pointer;
+  }
+  .switch input{position:absolute;opacity:0;width:0;height:0;}
+  .switch span{
+    position:absolute;inset:0;background:#cfcfd8;border-radius:10px;
+    transition:background .15s;
+  }
+  .switch span::after{
+    content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;
+    border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);
+    transition:left .15s;
+  }
+  .switch input:checked + span{background:var(--accent);}
+  .switch input:checked + span::after{left:16px;}
+  .hk-rules{margin:6px 0 4px;padding-left:18px;}
+  .hk-rules li{margin:3px 0;}
+
+  /* ---------- 显示与启动 ---------- */
+  .seg{display:flex;}
+  .seg-btn{
+    height:32px;padding:0 14px;background:#fff;border:1px solid #d0d0d8;
+    font-family:inherit;font-size:13px;color:var(--text);cursor:pointer;
+  }
+  .seg-btn:first-child{border-radius:6px 0 0 6px;}
+  .seg-btn:last-child{border-radius:0 6px 6px 0;margin-left:-1px;}
+  .seg-btn.active{background:#f3f7ff;color:var(--accent);border-color:var(--accent);position:relative;z-index:1;}
+>>>>>>> feat/uiaccess-overlay
   .hk-msg{margin:-2px 0 9px 86px;font-size:12px;line-height:1.9;color:#c62828;}
   .hk-msg[hidden]{display:none;}
   .hk-msg .hk-sub{color:var(--sub);}
@@ -250,6 +281,25 @@
   <div class="sec mt">预设</div>
   <div class="grid" id="grid"></div>
 
+  <div class="sec mt">显示与启动</div>
+  <div class="hk-card">
+    <div class="hk-row">
+      <span class="hk-label">遮蔽范围</span>
+      <div class="seg" id="segRange">
+        <button class="seg-btn" data-v="1">全部显示器</button>
+        <button class="seg-btn" data-v="0">仅主屏</button>
+      </div>
+      <span class="hk-desc">多显示器时只遮住主屏</span>
+    </div>
+    <div class="hk-item">
+      <div class="hk-row">
+        <span class="hk-label">开机自启</span>
+        <span class="hk-desc">登录 Windows 后自动运行 Veil（不会自动开启遮罩）</span>
+        <label class="switch" title="开机自启"><input type="checkbox" id="autoStartSwitch"><span></span></label>
+      </div>
+    </div>
+  </div>
+
   <div class="sec mt">快捷键</div>
   <div class="hk-card">
     <div class="hk-item">
@@ -257,7 +307,11 @@
         <span class="hk-label">开关防窥</span>
         <button class="hk-key" id="hkToggle" onclick="recordHotkey('toggle')">Ctrl+Alt+X</button>
         <span class="hk-desc">开启 / 关闭隐私屏保</span>
+<<<<<<< HEAD
         <label class="hk-switch" title="启用 / 禁用这组快捷键"><input type="checkbox" id="hkOffToggle" checked onchange="setHotkeyOff('toggle', !this.checked)"><span></span></label>
+=======
+        <label class="switch" title="启用 / 禁用这组快捷键"><input type="checkbox" id="hkOffToggle"><span></span></label>
+>>>>>>> feat/uiaccess-overlay
       </div>
       <div class="hk-msg" id="hkMsgToggle" hidden></div>
     </div>
@@ -266,7 +320,11 @@
         <span class="hk-label">打开设置</span>
         <button class="hk-key" id="hkSettings" onclick="recordHotkey('settings')">Ctrl+Alt+S</button>
         <span class="hk-desc">打开 / 关闭本面板</span>
+<<<<<<< HEAD
         <label class="hk-switch" title="启用 / 禁用这组快捷键"><input type="checkbox" id="hkOffSettings" checked onchange="setHotkeyOff('settings', !this.checked)"><span></span></label>
+=======
+        <label class="switch" title="启用 / 禁用这组快捷键"><input type="checkbox" id="hkOffSettings"><span></span></label>
+>>>>>>> feat/uiaccess-overlay
       </div>
       <div class="hk-msg" id="hkMsgSettings" hidden></div>
     </div>
@@ -275,6 +333,7 @@
         <span class="hk-label">退出程序</span>
         <button class="hk-key" id="hkQuit" onclick="recordHotkey('quit')">Ctrl+Alt+C</button>
         <span class="hk-desc">彻底退出 Veil</span>
+<<<<<<< HEAD
         <label class="hk-switch" title="启用 / 禁用这组快捷键"><input type="checkbox" id="hkOffQuit" checked onchange="setHotkeyOff('quit', !this.checked)"><span></span></label>
       </div>
       <div class="hk-msg" id="hkMsgQuit" hidden></div>
@@ -286,6 +345,22 @@
       <li>不需要的快捷键可用右侧开关单独关闭，也可以在托盘菜单里一键全部禁用。</li>
       <li>兜底键 <b>Ctrl+Alt+Shift+Q</b> 始终可以强制退出，不可禁用。<span class="hk-warn" id="hkEscapeWarn" hidden>（当前被其他程序占用，未生效）</span></li>
     </ul>
+=======
+        <label class="switch" title="启用 / 禁用这组快捷键"><input type="checkbox" id="hkOffQuit"><span></span></label>
+      </div>
+      <div class="hk-msg" id="hkMsgQuit" hidden></div>
+    </div>
+    <div class="hk-note">
+      <ul class="hk-rules">
+        <li>点击热键框后按下新的组合键，按 Esc 取消</li>
+        <li>字母、数字、标点、方向键需搭配 Ctrl、Alt 或 Win；F1~F12 搭配任意修饰键即可（Shift 也行）；F13~F24 可单独使用</li>
+        <li>按下后没有反应，通常说明该组合已被其他程序占用；用键盘钩子实现快捷键的程序（如微信的截图键）检测不出来，会两边同时响应</li>
+        <li>不需要的快捷键可单独关闭，也可在托盘菜单一键全部关闭</li>
+        <li>固定兜底键 <b>Ctrl+Alt+Shift+Q</b> 始终可以强制退出，不可关闭</li>
+      </ul>
+      <span class="hk-warn" id="hkEscapeWarn" hidden>当前兜底键被其他程序占用，未生效——遮罩开启后将无法用键盘退出，请尽快更换其他程序的组合。</span>
+    </div>
+>>>>>>> feat/uiaccess-overlay
   </div>
 
   <div class="spacer"></div>
@@ -357,6 +432,12 @@ function render(){
     el.classList.toggle('applied', applied);
     if (applied) el.querySelector('.badge').textContent = appliedLabel;
   });
+
+  // 显示与启动
+  document.querySelectorAll('#segRange .seg-btn').forEach(b=>{
+    b.classList.toggle('active', (b.dataset.v==='1') === !!S.allMonitors);
+  });
+  document.getElementById('autoStartSwitch').checked = !!S.autoStart;
 
   updateApplyButton();
 }
@@ -505,8 +586,20 @@ function recordHotkey(kind){
   btn.classList.remove('inactive', 'off');
   btn.classList.add('recording');
 
+  // 抢键检测：钩子类程序（如微信截图）会抢先处理按键并抢走焦点，面板可能收不到任何按键。
+  // 失焦后短时间内没收到按键 → 断定触发了别的程序，提示换一个（不注册，避免两边同时响应）。
+  let gotKey = false;
+  const onBlur = ()=>{
+    setTimeout(()=>{
+      if(recording !== kind || gotKey) return;
+      end();
+      tip('没有收到按键：这个组合可能触发了其他程序，请换一个试试', 4200);
+      loadHotkeys();
+    }, 400);
+  };
   const handler = (e)=>{
     e.preventDefault(); e.stopPropagation();
+    gotKey = true;
     if(e.key === 'Escape'){ end(); loadHotkeys(); return; }
     const vk = vkFromEvent(e);
     // 单独按下的修饰键（Shift / Ctrl / Alt / Win）：继续等主键
@@ -518,9 +611,11 @@ function recordHotkey(kind){
   };
   const end = ()=>{
     window.removeEventListener('keydown', handler, true);
+    window.removeEventListener('blur', onBlur);
     recording = null;
     btn.classList.remove('recording');
   };
+  window.addEventListener('blur', onBlur);
   window.addEventListener('keydown', handler, true);
 }
 
@@ -550,6 +645,31 @@ async function setHotkeyOff(kind, off){
   }
   loadHotkeys();
 }
+
+// 热键开关 = 启用 / 禁用（checked 为启用状态）
+for(const kind in HK){
+  document.getElementById(HK[kind].off).addEventListener('change', e=>{
+    setHotkeyOff(kind, !e.target.checked);
+  });
+}
+
+/* ---------- 显示与启动 ---------- */
+document.querySelectorAll('#segRange .seg-btn').forEach(b=>{
+  b.onclick = async ()=>{
+    const v = b.dataset.v==='1';
+    let r; try{ r = JSON.parse(await window.goSetAllMonitors(v)); }catch(e){ r={error:'返回格式异常'}; }
+    if(r.error){ tip(r.error, 3800); return; }
+    S.allMonitors = v;
+    render();
+    tip(v ? '遮罩开启时将覆盖全部显示器' : '遮罩开启时将只覆盖主屏');
+  };
+});
+document.getElementById('autoStartSwitch').addEventListener('change', async e=>{
+  const on = e.target.checked;
+  let r; try{ r = JSON.parse(await window.goSetAutoStart(on)); }catch(err){ r={error:'返回格式异常'}; }
+  if(r.error){ e.target.checked = !on; tip(r.error, 3800); return; }
+  tip(on ? '已开启开机自启' : '已关闭开机自启');
+});
 
 window.addEventListener('DOMContentLoaded', boot);
 // 开关 = 启用 / 禁用该组快捷键（checked 为启用状态）
